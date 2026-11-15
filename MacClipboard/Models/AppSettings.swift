@@ -84,6 +84,10 @@ final class AppSettings: ObservableObject {
     }
 
     // 面板尺寸："small" / "medium" / "large"
+    @Published var panelFollowsMouseScreen: Bool {
+        didSet { Self.defaults.set(panelFollowsMouseScreen, forKey: "panelFollowsMouseScreen") }
+    }
+
     @Published var popoverSize: String {
         didSet {
             Self.defaults.set(popoverSize, forKey: "popoverSize")
@@ -178,6 +182,7 @@ final class AppSettings: ObservableObject {
         hotkeyCode = d.object(forKey: "hotkeyCode") as? Int ?? 9
         hotkeyDisplay = d.string(forKey: "hotkeyDisplay") ?? "V"
         historyLayout = d.string(forKey: "historyLayout") ?? "list"
+        panelFollowsMouseScreen = d.object(forKey: "panelFollowsMouseScreen") as? Bool ?? false
         popoverSize = d.string(forKey: "popoverSize") ?? "medium"
         accentColorName = d.string(forKey: "accentColorName") ?? "system"
         historyRetentionDays = d.object(forKey: "historyRetentionDays") as? Int ?? 0

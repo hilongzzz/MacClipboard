@@ -34,6 +34,7 @@ enum DetailPresenter {
 
 struct DetailPreviewContent: View {
     let item: ClipboardItem
+    @State private var copiedOCR = false
 
     var body: some View {
         Group {
@@ -51,17 +52,39 @@ struct DetailPreviewContent: View {
                             .padding()
                     }
 
-                    // OCR 识别文字（可选中复制）
+                    // OCR 识别文字（一键复制 / 可选中复制）
                     if let ocrText = item.textContent, !ocrText.isEmpty {
                         Divider()
+                        HStack {
+                            Text("识别文字")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Button {
+                                QuickActions.copyText(ocrText)
+                                copiedOCR = true
+                            } label: {
+                                Label(copiedOCR ? "已复制" : "复制文字", systemImage: copiedOCR ? "checkmark" : "doc.on.doc")
+                                    .font(.caption)
+                            }
+                            .buttonStyle(.borderless)
+                            .padding(.horizontal)
+                        }
+                        .padding(.vertical, 6)
                         ScrollView {
                             Text(ocrText)
                                 .font(.caption)
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
+                                .padding(.horizontal)
                         }
                         .frame(maxHeight: 140)
+                    } else {
+                        Divider()
+                        Text("未识别到文字")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.vertical, 8)
                     }
                 }
 

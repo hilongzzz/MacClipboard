@@ -129,6 +129,17 @@ final class StatusBarManager: NSObject {
     }
 
     private func positionPanelBelowStatusItem() {
+        // 可选：面板出现在鼠标所在的屏幕（多显示器场景）
+        if AppSettings.shared.panelFollowsMouseScreen {
+            let mouseLocation = NSEvent.mouseLocation
+            if let mouseScreen = NSScreen.screens.first(where: { NSMouseInRect(mouseLocation, $0.frame, false) }) {
+                let visibleFrame = mouseScreen.visibleFrame
+                let x = visibleFrame.midX - panel.frame.width / 2
+                panel.setFrameTopLeftPoint(CGPoint(x: x, y: visibleFrame.maxY - 10))
+                return
+            }
+        }
+
         guard let button = statusItem.button, let buttonWindow = button.window,
               let screen = buttonWindow.screen else { return }
         let buttonRect = buttonWindow.convertToScreen(button.frame)

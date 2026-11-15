@@ -27,6 +27,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // 双实例防护：已有实例在跑时激活它并退出当前进程。
+        // XCTest 宿主进程除外——否则单元测试会误判并中途杀掉测试宿主
+        let environment = ProcessInfo.processInfo.environment
+        let isRunningTests = environment["XCTestConfigurationFilePath"] != nil
+            || environment["XCTestSessionIdentifier"] != nil
+
+        if !isRunningTests {
+            let bundleID = Bundle.main.bundleIdentifier ?? ""
+            let instances = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+            if instances.count > 1,
+               let existing = instances.first(where: { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }) {
+                print("检测到已有实例 (pid=\(existing.processIdentifier))，激活它并退出当前进程")
+                existing.activate(options: [])
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    NSApp.terminate(nil)
+                }
+                return
+            }
+        }
+
         do {
             let modelContainer = try buildModelContainer()
             self.container = modelContainer

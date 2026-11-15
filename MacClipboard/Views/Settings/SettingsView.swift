@@ -85,6 +85,7 @@ struct GeneralSettingsView: View {
                     Text("中").tag("medium")
                     Text("大").tag("large")
                 }
+                Toggle("面板出现在鼠标所在屏幕", isOn: $settings.panelFollowsMouseScreen)
                 Picker("主题色", selection: $settings.accentColorName) {
                     ForEach(AppTheme.presets, id: \.self) { name in
                         Text(AppTheme.displayName(for: name)).tag(name)
@@ -150,6 +151,7 @@ struct StorageSettingsView: View {
     @Query private var snippets: [Snippet]
     @State private var storeSizeText = "…"
     @State private var showClearAllConfirm = false
+    @State private var importResult: (imported: Int, skipped: Int)?
 
     var body: some View {
         Form {
@@ -184,6 +186,14 @@ struct StorageSettingsView: View {
                 Button("导出片段为 JSON") {
                     DataManagement.exportSnippets(snippets)
                 }
+                Button("从 JSON 导入片段") {
+                    if let result = DataManagement.pickAndImportSnippets(
+                        into: modelContext,
+                        existingHashes: Set(snippets.compactMap(\.contentHash))
+                    ) {
+                        importResult = result
+                    }
+                }
                 Button("清空全部数据", role: .destructive) {
                     showClearAllConfirm = true
                 }
@@ -216,6 +226,18 @@ struct StorageSettingsView: View {
             }
         } message: {
             Text("此操作将删除全部历史与片段，且不可恢复。")
+        }
+        .alert("导入完成", isPresented: Binding(
+            get: { importResult != nil },
+            set: { if !$0 { importResult = nil } }
+        )) {
+            Button("好") { importResult = nil }
+        } message: {
+            Text(String(
+                format: NSLocalizedString("新增 %lld 条片段，跳过 %lld 条重复。", comment: ""),
+                importResult?.imported ?? 0,
+                importResult?.skipped ?? 0
+            ))
         }
     }
 

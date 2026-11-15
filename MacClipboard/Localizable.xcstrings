@@ -251,6 +251,16 @@
         }
       }
     },
+    "从 JSON 导入片段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Snippets from JSON"
+          }
+        }
+      }
+    },
     "例如: com.apple.Terminal, com.googlecode.iterm2": {
       "localizations": {
         "en": {
@@ -601,6 +611,16 @@
         }
       }
     },
+    "复制文字": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Text"
+          }
+        }
+      }
+    },
     "复制结果": {
       "localizations": {
         "en": {
@@ -617,6 +637,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Large"
+          }
+        }
+      }
+    },
+    "好": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         }
       }
@@ -647,6 +677,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rich Text"
+          }
+        }
+      }
+    },
+    "导入完成": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Complete"
           }
         }
       }
@@ -801,6 +841,16 @@
         }
       }
     },
+    "新增 %lld 条片段，跳过 %lld 条重复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld snippets imported, %lld duplicates skipped."
+          }
+        }
+      }
+    },
     "新建分组": {
       "localizations": {
         "en": {
@@ -847,6 +897,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No clipboard history"
+          }
+        }
+      }
+    },
+    "未识别到文字": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No text recognized"
           }
         }
       }
@@ -1267,6 +1327,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Accessibility Permission Required"
+          }
+        }
+      }
+    },
+    "面板出现在鼠标所在屏幕": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show panel on the screen under the mouse"
           }
         }
       }
