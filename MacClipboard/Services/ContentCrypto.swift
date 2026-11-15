@@ -26,6 +26,9 @@ enum ContentCrypto {
 
     // MARK: - 加解密
 
+    /// Keychain 不可用（如 CI 无头 runner）时为 false，加密退化为明文
+    static var isEncryptionAvailable: Bool { key != nil }
+
     static func encrypt(data: Data) -> Data {
         guard let key, let sealed = try? AES.GCM.seal(data, using: key), let combined = sealed.combined else {
             return data // 加密不可用时退化为明文存储，不阻断采集

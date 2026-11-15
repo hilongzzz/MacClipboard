@@ -21,9 +21,22 @@
 		1B4C8A2E00020000000000B4 /* MacClipboardTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacClipboardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		1B4C8A2E00030000000000C0 /* Exceptions for "MacClipboard" folder in "MacClipboard" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 1B4C8A2E00010000000000A6 /* MacClipboard */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1B4C8A2E00010000000000A1 /* MacClipboard */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				1B4C8A2E00030000000000C0 /* Exceptions for "MacClipboard" folder in "MacClipboard" target */,
+			);
 			path = MacClipboard;
 			sourceTree = "<group>";
 		};
