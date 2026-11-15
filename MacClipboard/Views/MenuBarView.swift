@@ -141,7 +141,6 @@ struct MenuBarView: View {
             }
             .padding(10)
             .background(Color(NSColor.controlBackgroundColor))
-            .liquidGlass(in: RoundedRectangle(cornerRadius: 0))
 
             // 模式切换（历史 / 片段）+ 分类筛选（仅历史模式）
             HStack(spacing: 8) {
