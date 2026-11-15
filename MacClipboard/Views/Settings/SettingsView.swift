@@ -66,6 +66,7 @@ struct SettingsView: View {
 
 struct GeneralSettingsView: View {
     @ObservedObject var settings: AppSettings
+    @State private var showLanguageRestartAlert = false
 
     var body: some View {
         Form {
@@ -122,6 +123,27 @@ struct GeneralSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .onChange(of: settings.languageOverride) { _, _ in
+            showLanguageRestartAlert = true
+        }
+        .alert("语言已切换", isPresented: $showLanguageRestartAlert) {
+            Button("稍后", role: .cancel) {}
+            Button("立即重启") { restartApp() }
+        } message: {
+            Text("新语言将在重启应用后生效。")
+        }
+    }
+
+    /// 用 /usr/bin/open 重新拉起自身，保证终止后立即重启
+    private func restartApp() {
+        let bundleID = Bundle.main.bundleIdentifier ?? ""
+        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+            task.arguments = [appURL.path]
+            try? task.run()
+        }
+        NSApp.terminate(nil)
     }
 }
 
