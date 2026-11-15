@@ -53,8 +53,10 @@ final class DataManagementTests: XCTestCase {
         let snippets = try context.fetch(FetchDescriptor<Snippet>())
         XCTAssertEqual(snippets.count, 1)
         let snippet = snippets[0]
-        // 落盘为密文，读回为明文
-        XCTAssertNotEqual(snippet.imageData, plainImage)
+        // 落盘为密文、读回为明文；Keychain 不可用（CI）时按设计退化为明文
+        if ContentCrypto.isEncryptionAvailable {
+            XCTAssertNotEqual(snippet.imageData, plainImage)
+        }
         XCTAssertEqual(snippet.plainImageData, plainImage)
         XCTAssertEqual(snippet.textContent, "OCR 文本")
         XCTAssertNotNil(snippet.pinyinIndex)
