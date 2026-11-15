@@ -136,6 +136,19 @@ final class AppSettings: ObservableObject {
         didSet { Self.defaults.set(previewPaneEnabled, forKey: "previewPaneEnabled") }
     }
 
+    // 应用语言覆盖（"system" = 跟随系统；重启后生效）
+    @Published var languageOverride: String {
+        didSet {
+            Self.defaults.set(languageOverride, forKey: "languageOverride")
+            AppLanguage.apply(languageOverride)
+        }
+    }
+
+    // 退出时清空未置顶历史（Maccy 式 clear-on-quit；片段与置顶保留）
+    @Published var clearOnQuit: Bool {
+        didSet { Self.defaults.set(clearOnQuit, forKey: "clearOnQuit") }
+    }
+
     // iCloud 同步（切换后需重启应用生效；失败自动回退本地）
     @Published var iCloudSync: Bool {
         didSet { Self.defaults.set(iCloudSync, forKey: "iCloudSync") }
@@ -198,6 +211,8 @@ final class AppSettings: ObservableObject {
         iCloudSync = d.object(forKey: "iCloudSync") as? Bool ?? false
         customCommand = d.string(forKey: "customCommand") ?? ""
         previewPaneEnabled = d.object(forKey: "previewPaneEnabled") as? Bool ?? true
+        languageOverride = d.string(forKey: "languageOverride") ?? "system"
+        clearOnQuit = d.object(forKey: "clearOnQuit") as? Bool ?? false
     }
 
     var excludedBundleIDSet: Set<String> {

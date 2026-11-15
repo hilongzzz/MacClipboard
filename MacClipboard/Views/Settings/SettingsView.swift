@@ -87,6 +87,12 @@ struct GeneralSettingsView: View {
                 }
                 Toggle("面板出现在鼠标所在屏幕", isOn: $settings.panelFollowsMouseScreen)
                 Toggle("大尺寸面板显示预览窗格", isOn: $settings.previewPaneEnabled)
+                Picker("应用语言（重启后生效）", selection: $settings.languageOverride) {
+                    Text(NSLocalizedString("跟随系统", comment: "")).tag("system")
+                    ForEach(AppLanguage.available, id: \.code) { lang in
+                        Text(lang.nativeName).tag(lang.code)
+                    }
+                }
                 Picker("主题色", selection: $settings.accentColorName) {
                     ForEach(AppTheme.presets, id: \.self) { name in
                         Text(AppTheme.displayName(for: name)).tag(name)
@@ -178,6 +184,14 @@ struct StorageSettingsView: View {
                 }
             } footer: {
                 Text("超过保留时长的未置顶历史将被自动删除，片段与置顶卡片不受影响。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section {
+                Toggle("退出时清空未置顶历史", isOn: $settings.clearOnQuit)
+            } footer: {
+                Text("退出时将清除未置顶的历史记录，片段与置顶卡片保留。")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

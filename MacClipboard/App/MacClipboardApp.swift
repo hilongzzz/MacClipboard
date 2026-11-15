@@ -68,6 +68,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// 退出时按设置清空未置顶历史（clear-on-quit）
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if AppSettings.shared.clearOnQuit, let container = container {
+            let context = container.mainContext
+            try? context.delete(model: ClipboardItem.self, where: #Predicate<ClipboardItem> { !$0.isPinned })
+            do {
+                try context.save()
+            } catch {
+                print("退出清空历史失败: \(error)")
+            }
+        }
+        return .terminateNow
+    }
+
     /// iCloud 同步开启时尝试 CloudKit 容器，失败（未登录/无授权）自动回退本地
     private func buildModelContainer() throws -> ModelContainer {
         if AppSettings.shared.iCloudSync {
