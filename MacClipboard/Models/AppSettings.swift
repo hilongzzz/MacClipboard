@@ -127,6 +127,16 @@ final class AppSettings: ObservableObject {
         didSet { Self.defaults.set(imageOCR, forKey: "imageOCR") }
     }
 
+    // iCloud 同步（切换后需重启应用生效；失败自动回退本地）
+    @Published var iCloudSync: Bool {
+        didSet { Self.defaults.set(iCloudSync, forKey: "iCloudSync") }
+    }
+
+    // 自定义 shell 命令（空 = 关闭；文本经 stdin 传入，stdout 写回剪贴板）
+    @Published var customCommand: String {
+        didSet { Self.defaults.set(customCommand, forKey: "customCommand") }
+    }
+
     static let hotkeyDidChangeNotification = Notification.Name("AppSettings.hotkeyDidChange")
     static let appearanceDidChangeNotification = Notification.Name("AppSettings.appearanceDidChange")
     static let retentionDidChangeNotification = Notification.Name("AppSettings.retentionDidChange")
@@ -175,6 +185,8 @@ final class AppSettings: ObservableObject {
         recordImages = d.object(forKey: "recordImages") as? Bool ?? true
         recordFiles = d.object(forKey: "recordFiles") as? Bool ?? true
         imageOCR = d.object(forKey: "imageOCR") as? Bool ?? true
+        iCloudSync = d.object(forKey: "iCloudSync") as? Bool ?? false
+        customCommand = d.string(forKey: "customCommand") ?? ""
     }
 
     var excludedBundleIDSet: Set<String> {

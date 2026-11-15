@@ -141,6 +141,7 @@ struct MenuBarView: View {
             }
             .padding(10)
             .background(Color(NSColor.controlBackgroundColor))
+            .liquidGlass(in: RoundedRectangle(cornerRadius: 0))
 
             // 模式切换（历史 / 片段）+ 分类筛选（仅历史模式）
             HStack(spacing: 8) {
@@ -626,6 +627,14 @@ struct MenuBarView: View {
     }
 }
 
+private func actionTitleKey(_ action: AIAssistant.Action) -> String {
+    switch action {
+    case .summarize: return "AI 摘要"
+    case .translate: return "AI 翻译"
+    case .polish: return "AI 润色"
+    }
+}
+
 /// 历史卡片的公共右键菜单（列表与卡片流共用）
 @ViewBuilder
 func clipboardItemContextMenu(
@@ -652,6 +661,28 @@ func clipboardItemContextMenu(
     if item.type == .text, let text = item.textContent {
         Button("用 Google 搜索") {
             QuickActions.searchWeb(text)
+        }
+
+        // Apple Intelligence 动作（macOS 26+ 端上模型可用时）
+        if AIAssistant.isAvailable, text.count <= 2000 {
+            Menu("AI 助手") {
+                ForEach(AIAssistant.Action.allCases, id: \.self) { action in
+                    Button(actionTitleKey(action)) {
+                        AIAssistant.performAndShow(action: action, text: text)
+                    }
+                }
+            }
+        }
+
+        // 自定义 shell 命令
+        if !AppSettings.shared.customCommand.trimmingCharacters(in: .whitespaces).isEmpty {
+            Button("运行自定义命令") {
+                if let result = CustomCommand.run(command: AppSettings.shared.customCommand, on: text) {
+                    QuickActions.copyText(result)
+                } else {
+                    NSSound.beep()
+                }
+            }
         }
     }
     if item.type == .color, let hex = item.colorHex {

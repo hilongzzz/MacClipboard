@@ -97,6 +97,18 @@ struct GeneralSettingsView: View {
                 Toggle("忽略富文本样式（统一以纯文本粘贴）", isOn: $settings.pastePlaintextOnly)
             }
 
+            Section {
+                TextField("例如: tr a-z A-Z", text: $settings.customCommand, axis: .vertical)
+                    .lineLimit(1...3)
+                    .font(.system(.body, design: .monospaced))
+            } header: {
+                Text("自定义命令")
+            } footer: {
+                Text("右键文本卡片运行：文本经 stdin 传入命令，stdout 写回剪贴板；留空关闭。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
             Section(footer: Text("全局快捷键在上方点击录制，须包含 ⌘/⇧/⌥/⌃ 至少一个修饰键。").font(.caption).foregroundColor(.secondary)) {
                 LabeledContent("列表快捷键", value: NSLocalizedString("⌘C 复制  |  ⌘P 置顶  |  ⌘⌫ 删除  |  1-9 速贴  |  ⌘, 设置", comment: ""))
             }
@@ -179,6 +191,16 @@ struct StorageSettingsView: View {
                 Text("数据管理")
             } footer: {
                 Text("清空将删除全部历史与片段，且不可恢复，请先导出重要片段。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section {
+                Toggle("通过 iCloud 私有容器同步", isOn: $settings.iCloudSync)
+            } header: {
+                Text("iCloud 同步")
+            } footer: {
+                Text("启用后片段与历史跨设备同步；切换后需重启应用生效。未登录 iCloud 或缺少授权时自动回退本地存储。")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

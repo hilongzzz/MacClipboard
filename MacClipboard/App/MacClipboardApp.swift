@@ -19,6 +19,7 @@ struct MacClipboardApp: App {
     }
 }
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     var container: ModelContainer?
     var monitor: ClipboardMonitor?
@@ -27,7 +28,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         do {
-            let modelContainer = try ModelContainer(for: ClipboardItem.self, Snippet.self)
+            let modelContainer = try buildModelContainer()
             self.container = modelContainer
 
             let monitorInstance = ClipboardMonitor(modelContext: modelContainer.mainContext)
@@ -41,9 +42,66 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             )
 
+            registerURLSchemeHandler()
         } catch {
             fatalError("Failed to initialize SwiftData container: \(error)")
         }
+    }
+
+    /// iCloud 同步开启时尝试 CloudKit 容器，失败（未登录/无授权）自动回退本地
+    private func buildModelContainer() throws -> ModelContainer {
+        if AppSettings.shared.iCloudSync {
+            do {
+                let cloudConfig = ModelConfiguration(cloudKitDatabase: .automatic)
+                let container = try ModelContainer(
+                    for: ClipboardItem.self, Snippet.self,
+                    configurations: cloudConfig
+                )
+                print("SwiftData 容器：iCloud 同步已启用")
+                return container
+            } catch {
+                print("iCloud 容器创建失败，回退本地存储: \(error)")
+            }
+        }
+        return try ModelContainer(for: ClipboardItem.self, Snippet.self)
+    }
+
+    // MARK: - URL Scheme (macclipboard://)
+
+    private func registerURLSchemeHandler() {
+        NSAppleEventManager.shared().setEventHandler(
+            self,
+            andSelector: #selector(handleGetURLEvent(_:withReplyEvent:)),
+            forEventClass: AEEventClass(kInternetEventClass),
+            andEventID: AEEventID(kAEGetURL)
+        )
+    }
+
+    @objc private func handleGetURLEvent(_ event: NSAppleEventDescriptor, withReplyEvent reply: NSAppleEventDescriptor) {
+        guard let direct = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject)),
+              let urlString = direct.stringValue,
+              let url = URL(string: urlString),
+              let command = URLCommand.parse(url) else { return }
+
+        switch command {
+        case .show:
+            statusBarManager?.togglePanel()
+        case .toggleIncognito:
+            monitor?.isIncognito.toggle()
+        case .paste(let index):
+            pasteNthHistoryItem(index)
+        }
+    }
+
+    private func pasteNthHistoryItem(_ index: Int) {
+        guard let container, let modelContext = try? ModelContext(container) else { return }
+        var descriptor = FetchDescriptor<ClipboardItem>(
+            sortBy: [SortDescriptor(\ClipboardItem.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = index
+        guard let items = try? modelContext.fetch(descriptor), items.count >= index else { return }
+        AutoPaster.paste(item: items[index - 1])
+        SoundManager.playPasteSound()
     }
 
     @MainActor

@@ -37,4 +37,14 @@ extension View {
             self
         }
     }
+
+    /// macOS 26 Liquid Glass 玻璃材质；低版本自动降级为原样式
+    @ViewBuilder
+    func liquidGlass(in shape: some Shape) -> some View {
+        if #available(macOS 26.0, *) {
+            self.glassEffect(in: shape)
+        } else {
+            self
+        }
+    }
 }

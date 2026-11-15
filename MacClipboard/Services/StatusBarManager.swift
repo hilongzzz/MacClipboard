@@ -14,7 +14,7 @@ import Carbon.HIToolbox
 @MainActor
 final class StatusBarManager: NSObject {
     private var statusItem: NSStatusItem!
-    private var popover: NSPopover!
+    private var panel: NSPanel!
     private var monitor: ClipboardMonitor
     private var onOpenSettings: () -> Void
     private var cancellables = Set<AnyCancellable>()
@@ -47,22 +47,37 @@ final class StatusBarManager: NSObject {
             }
             .store(in: &cancellables)
 
-        // 2. 初始化 Popover 视图，并将 onOpenSettings 回调透传给 MenuBarView
-        let popoverView = MenuBarView(
+        // 2. 面板视图（NSPanel：可调大小、尺寸自动记忆、失焦自动隐藏）
+        let panelView = MenuBarView(
             monitor: monitor,
             onOpenSettings: { [weak self] in
-                self?.popover.performClose(nil) // 打开设置时自动收起状态栏弹窗
+                self?.panel.orderOut(nil) // 打开设置时自动收起面板
                 onOpenSettings()
             }
         )
         .modelContainer(container)
 
-        popover = NSPopover()
-        applyPopoverSize()
-        popover.behavior = .transient // 点击弹窗外部区域自动隐藏
-        popover.contentViewController = NSHostingController(rootView: popoverView)
+        panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: 460),
+            styleMask: [.titled, .closable, .resizable, .nonactivatingPanel, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        panel.level = .floating
+        panel.isFloatingPanel = true
+        panel.hidesOnDeactivate = true // 点击面板外部自动隐藏（等价原 popover transient）
+        panel.collectionBehavior = [.fullScreenAuxiliary]
+        panel.isReleasedWhenClosed = false
+        panel.animationBehavior = .utilityWindow
+        panel.contentView = NSHostingView(rootView: panelView)
+        panel.setFrameAutosaveName("MainPanel")
 
-        // 设置页调整面板尺寸后实时生效
+        // 3. 注册全局快捷键（可在设置中自定义）
+        registerGlobalHotkey()
+
+        // 4. 设置页调整面板尺寸后实时生效（仅在用户未手动改过尺寸时）
         NotificationCenter.default.addObserver(
             forName: AppSettings.appearanceDidChangeNotification,
             object: nil,
@@ -70,45 +85,57 @@ final class StatusBarManager: NSObject {
         ) { [weak self] _ in
             guard let self else { return }
             Task { @MainActor in
-                self.applyPopoverSize()
+                self.applyPanelSizeIfNeeded()
             }
         }
-
-        // 3. 注册全局快捷键 (Option + Shift + V)
-        // 使用 Carbon RegisterEventHotKey：应用自身聚焦时同样生效
-        // （NSEvent.addGlobalMonitorForEvents 在本应用获得焦点时收不到事件）
-        registerGlobalHotkey()
     }
 
     @objc func statusItemClicked(_ sender: NSStatusBarButton) {
         let event = NSApp.currentEvent
         if event?.type == .rightMouseUp {
-            if popover.isShown {
-                popover.performClose(nil)
+            if panel.isVisible {
+                panel.orderOut(nil)
             }
             showContextMenu()
         } else {
-            togglePopover()
+            togglePanel()
         }
     }
 
-    @objc func togglePopover() {
-        guard let button = statusItem.button else { return }
-        if popover.isShown {
-            popover.performClose(nil)
+    /// 显示/隐藏面板，并定位到状态栏图标下方（多显示器边界内）
+    @objc func togglePanel() {
+        if panel.isVisible {
+            panel.orderOut(nil)
         } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            // 激活 App 确保 Popover 内部的 TextField 能直接获得键盘输入焦点
+            applyPanelSizeIfNeeded()
+            positionPanelBelowStatusItem()
+            panel.makeKeyAndOrderFront(nil)
+            // 激活 App 确保面板内的 TextField 能直接获得键盘输入焦点
             NSApp.activate(ignoringOtherApps: true)
         }
     }
 
-    private func applyPopoverSize() {
+    private func applyPanelSizeIfNeeded() {
+        // 用户手动调整过尺寸（autosave 已有记录）则尊重其尺寸
+        guard UserDefaults.standard.object(forKey: "NSWindow Frame MainPanel") == nil else { return }
         switch AppSettings.shared.popoverSize {
-        case "small": popover.contentSize = NSSize(width: 320, height: 380)
-        case "large": popover.contentSize = NSSize(width: 460, height: 560)
-        default: popover.contentSize = NSSize(width: 380, height: 460)
+        case "small": panel.setContentSize(NSSize(width: 320, height: 380))
+        case "large": panel.setContentSize(NSSize(width: 460, height: 560))
+        default: panel.setContentSize(NSSize(width: 380, height: 460))
         }
+    }
+
+    private func positionPanelBelowStatusItem() {
+        guard let button = statusItem.button, let buttonWindow = button.window,
+              let screen = buttonWindow.screen else { return }
+        let buttonRect = buttonWindow.convertToScreen(button.frame)
+        let panelWidth = panel.frame.width
+
+        let visibleFrame = screen.visibleFrame
+        var x = buttonRect.midX - panelWidth / 2
+        x = max(visibleFrame.minX + 8, min(x, visibleFrame.maxX - panelWidth - 8))
+        let y = buttonRect.minY - 6
+        panel.setFrameTopLeftPoint(CGPoint(x: x, y: y))
     }
 
     private func showContextMenu() {
@@ -116,7 +143,7 @@ final class StatusBarManager: NSObject {
 
         let showItem = NSMenuItem(
             title: NSLocalizedString("唤出剪贴板 (⌥⇧V)", comment: ""),
-            action: #selector(togglePopover),
+            action: #selector(togglePanel),
             keyEquivalent: ""
         )
         showItem.target = self
@@ -193,7 +220,7 @@ final class StatusBarManager: NSObject {
             guard let userData else { return noErr }
             let manager = Unmanaged<StatusBarManager>.fromOpaque(userData).takeUnretainedValue()
             Task { @MainActor in
-                manager.togglePopover()
+                manager.togglePanel()
             }
             return noErr
         }

@@ -58,12 +58,24 @@ enum ContentCrypto {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
-            kSecReturnData as String: true
+            kSecReturnData as String: true,
+            // 兼容旧密钥（本机）与 iCloud 同步密钥
+            kSecAttrSynchronizable as String: kSecAttrSynchronizableAny
         ]
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess else { return nil }
-        return result as? Data
+        guard status == errSecSuccess, let data = result as? Data else { return nil }
+
+        // 旧密钥升级为可跨设备同步（开启 iCloud 同步后新设备才能解密）
+        let updateQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        let update: [String: Any] = [kSecAttrSynchronizable as String: kCFBooleanTrue as Any]
+        SecItemUpdate(updateQuery as CFDictionary, update as CFDictionary)
+
+        return data
     }
 
     private static func saveKey(_ data: Data) -> Bool {
@@ -72,7 +84,8 @@ enum ContentCrypto {
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+            kSecAttrSynchronizable as String: kCFBooleanTrue as Any
         ]
         return SecItemAdd(query as CFDictionary, nil) == errSecSuccess
     }

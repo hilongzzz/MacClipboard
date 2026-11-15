@@ -81,6 +81,56 @@
         }
       }
     },
+    "AI 助手": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Assistant"
+          }
+        }
+      }
+    },
+    "AI 摘要": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Summarize"
+          }
+        }
+      }
+    },
+    "AI 润色": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Polish"
+          }
+        }
+      }
+    },
+    "AI 结果": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Result"
+          }
+        }
+      }
+    },
+    "AI 翻译": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Translate"
+          }
+        }
+      }
+    },
     "MacClipboard 偏好设置": {
       "localizations": {
         "en": {
@@ -97,6 +147,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "MacClipboard needs Accessibility permission to simulate Cmd+V for pasting. Please allow it in System Settings > Privacy & Security > Accessibility."
+          }
+        }
+      }
+    },
+    "iCloud 同步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud Sync"
           }
         }
       }
@@ -431,6 +491,26 @@
         }
       }
     },
+    "右键文本卡片运行：文本经 stdin 传入命令，stdout 写回剪贴板；留空关闭。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right-click a text item to run: text goes to stdin, stdout is written back to the clipboard. Leave empty to disable."
+          }
+        }
+      }
+    },
+    "启用后片段与历史跨设备同步；切换后需重启应用生效。未登录 iCloud 或缺少授权时自动回退本地存储。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snippets and history sync across devices via your private iCloud container. Restart the app after toggling. Falls back to local storage when iCloud is unavailable."
+          }
+        }
+      }
+    },
     "唤出剪贴板 (⌥⇧V)": {
       "localizations": {
         "en": {
@@ -521,6 +601,16 @@
         }
       }
     },
+    "复制结果": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Result"
+          }
+        }
+      }
+    },
     "大": {
       "localizations": {
         "en": {
@@ -587,6 +677,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Blocking & Filtering"
+          }
+        }
+      }
+    },
+    "已复制": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
           }
         }
       }
@@ -991,6 +1091,16 @@
         }
       }
     },
+    "自定义命令": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom Command"
+          }
+        }
+      }
+    },
     "记录图片": {
       "localizations": {
         "en": {
@@ -1061,6 +1171,16 @@
         }
       }
     },
+    "运行自定义命令": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run Custom Command"
+          }
+        }
+      }
+    },
     "退出 MacClipboard": {
       "localizations": {
         "en": {
@@ -1087,6 +1207,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "General & Pasting"
+          }
+        }
+      }
+    },
+    "通过 iCloud 私有容器同步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync via private iCloud container"
           }
         }
       }
