@@ -36,7 +36,8 @@ final class StatusBarManager: NSObject {
             button.image = image
             button.action = #selector(statusItemClicked(_:))
             button.target = self
-            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            // leftMouseDown：点击瞬间响应，避免窗口服务器激活切换吞掉第一次点击
+            button.sendAction(on: [.leftMouseDown, .rightMouseUp])
         }
 
         // 订阅无痕模式状态以实时切换状态栏图标
@@ -106,13 +107,15 @@ final class StatusBarManager: NSObject {
     @objc func togglePanel() {
         if panel.isVisible {
             panel.orderOut(nil)
-        } else {
-            applyPanelSizeIfNeeded()
-            positionPanelBelowStatusItem()
-            panel.makeKeyAndOrderFront(nil)
-            // 激活 App 确保面板内的 TextField 能直接获得键盘输入焦点
-            NSApp.activate(ignoringOtherApps: true)
+            return
         }
+        // 顺序很关键：先激活 App，面板才能成为 key（.nonactivatingPanel 特性），
+        // 否则第一次点击时面板会被激活切换吞掉
+        NSApp.activate(ignoringOtherApps: true)
+        applyPanelSizeIfNeeded()
+        positionPanelBelowStatusItem()
+        panel.orderFrontRegardless()
+        panel.makeKey()
     }
 
     private func applyPanelSizeIfNeeded() {
