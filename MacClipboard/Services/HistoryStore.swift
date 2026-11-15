@@ -65,6 +65,20 @@ final class HistoryStore {
         }
     }
 
+    /// 按保留天数自动清理：删除超过期限的未置顶历史（0 = 不清理）
+    func purgeExpired(olderThanDays days: Int) {
+        guard days > 0 else { return }
+        let cutoff = Date().addingTimeInterval(-Double(days) * 86400)
+        let descriptor = FetchDescriptor<ClipboardItem>(
+            predicate: #Predicate<ClipboardItem> { !$0.isPinned && $0.createdAt < cutoff }
+        )
+        guard let expired = try? modelContext.fetch(descriptor), !expired.isEmpty else { return }
+        for item in expired {
+            modelContext.delete(item)
+        }
+        save()
+    }
+
     func save() {
         do {
             try modelContext.save()

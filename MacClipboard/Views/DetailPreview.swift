@@ -74,5 +74,6 @@ struct DetailPreviewContent: View {
             }
         }
         .frame(minWidth: 480, minHeight: 380)
+        .appAccentTint(AppSettings.shared.accentColorName)
     }
 }

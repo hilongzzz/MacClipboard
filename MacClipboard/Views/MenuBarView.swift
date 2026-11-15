@@ -388,6 +388,7 @@ struct MenuBarView: View {
             }
             return .ignored
         }
+        .appAccentTint(settings.accentColorName)
     }
 
     // MARK: - 分组（Boards）UI

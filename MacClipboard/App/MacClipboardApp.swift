@@ -53,6 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self = self else { return }
             if self.settingsWindow == nil {
                 let settingsView = SettingsView()
+                    .modelContainer(self.container!)
                 let hostingController = NSHostingController(rootView: settingsView)
                 
                 let window = NSWindow(

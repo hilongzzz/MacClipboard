@@ -58,9 +58,21 @@ final class StatusBarManager: NSObject {
         .modelContainer(container)
 
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 360, height: 420)
+        applyPopoverSize()
         popover.behavior = .transient // 点击弹窗外部区域自动隐藏
         popover.contentViewController = NSHostingController(rootView: popoverView)
+
+        // 设置页调整面板尺寸后实时生效
+        NotificationCenter.default.addObserver(
+            forName: AppSettings.appearanceDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                self.applyPopoverSize()
+            }
+        }
 
         // 3. 注册全局快捷键 (Option + Shift + V)
         // 使用 Carbon RegisterEventHotKey：应用自身聚焦时同样生效
@@ -88,6 +100,14 @@ final class StatusBarManager: NSObject {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             // 激活 App 确保 Popover 内部的 TextField 能直接获得键盘输入焦点
             NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    private func applyPopoverSize() {
+        switch AppSettings.shared.popoverSize {
+        case "small": popover.contentSize = NSSize(width: 320, height: 380)
+        case "large": popover.contentSize = NSSize(width: 460, height: 560)
+        default: popover.contentSize = NSSize(width: 380, height: 460)
         }
     }
 

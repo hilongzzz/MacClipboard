@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Combine
 
 struct SettingsView: View {
@@ -33,8 +34,9 @@ struct SettingsView: View {
                     Label("关于与权限", systemImage: "info.circle")
                 }
         }
-        .frame(width: 540, height: 380)
+        .frame(width: 540, height: 420)
         .padding()
+        .appAccentTint(settings.accentColorName)
     }
 }
 
@@ -53,6 +55,16 @@ struct GeneralSettingsView: View {
                 Picker("面板布局", selection: $settings.historyLayout) {
                     Text("文本列表").tag("list")
                     Text("横向卡片流").tag("strip")
+                }
+                Picker("面板尺寸", selection: $settings.popoverSize) {
+                    Text("小").tag("small")
+                    Text("中").tag("medium")
+                    Text("大").tag("large")
+                }
+                Picker("主题色", selection: $settings.accentColorName) {
+                    ForEach(AppTheme.presets, id: \.self) { name in
+                        Text(AppTheme.displayName(for: name)).tag(name)
+                    }
                 }
             }
 
@@ -74,6 +86,12 @@ struct IgnoreSettingsView: View {
 
     var body: some View {
         Form {
+            Section("录制类型") {
+                Toggle("记录文本与链接", isOn: $settings.recordText)
+                Toggle("记录图片", isOn: $settings.recordImages)
+                Toggle("记录文件", isOn: $settings.recordFiles)
+            }
+
             Section("应用黑名单 (Bundle ID，逗号分隔)") {
                 TextField("例如: com.apple.Terminal, com.googlecode.iterm2", text: $settings.customExcludedBundleIDs, axis: .vertical)
                     .lineLimit(2...4)
@@ -91,6 +109,10 @@ struct IgnoreSettingsView: View {
 
 struct StorageSettingsView: View {
     @ObservedObject var settings: AppSettings
+    @Environment(\.modelContext) private var modelContext
+    @Query private var snippets: [Snippet]
+    @State private var storeSizeText = "…"
+    @State private var showClearAllConfirm = false
 
     var body: some View {
         Form {
@@ -106,8 +128,59 @@ struct StorageSettingsView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
+
+            Section {
+                Picker("历史保留时长", selection: $settings.historyRetentionDays) {
+                    Text("永久保留").tag(0)
+                    Text("7 天").tag(7)
+                    Text("30 天").tag(30)
+                    Text("90 天").tag(90)
+                }
+            } footer: {
+                Text("超过保留时长的未置顶历史将被自动删除，片段与置顶卡片不受影响。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section {
+                LabeledContent("存储占用", value: storeSizeText)
+                Button("导出片段为 JSON") {
+                    DataManagement.exportSnippets(snippets)
+                }
+                Button("清空全部数据", role: .destructive) {
+                    showClearAllConfirm = true
+                }
+            } header: {
+                Text("数据管理")
+            } footer: {
+                Text("清空将删除全部历史与片段，且不可恢复，请先导出重要片段。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
         .formStyle(.grouped)
+        .task {
+            storeSizeText = DataManagement.formattedStoreSize()
+        }
+        .alert("清空全部数据？", isPresented: $showClearAllConfirm) {
+            Button("取消", role: .cancel) {}
+            Button("清空", role: .destructive) {
+                clearAllData()
+            }
+        } message: {
+            Text("此操作将删除全部历史与片段，且不可恢复。")
+        }
+    }
+
+    private func clearAllData() {
+        try? modelContext.delete(model: ClipboardItem.self)
+        try? modelContext.delete(model: Snippet.self)
+        do {
+            try modelContext.save()
+        } catch {
+            print("清空数据失败: \(error)")
+        }
+        storeSizeText = DataManagement.formattedStoreSize()
     }
 }
 
@@ -115,7 +188,7 @@ struct AboutSettingsView: View {
     @State private var hasAccessibilityPermission: Bool = false
 
     private var versionText: String {
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.2.0"
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.5.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
         return String(format: NSLocalizedString("版本 %@ (Build %@)", comment: ""), version, build)
     }

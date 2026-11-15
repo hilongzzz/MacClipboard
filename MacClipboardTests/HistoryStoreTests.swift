@@ -107,4 +107,40 @@ final class HistoryStoreTests: XCTestCase {
         XCTAssertEqual(outcome, .deduplicated)
         XCTAssertEqual(try allItems().count, 2)
     }
+
+    // MARK: - 自动清理
+
+    func testPurgeExpiredRemovesOnlyOldUnpinned() throws {
+        store.store(makeTextItem("OLD", createdBefore: 40 * 86400), limit: 100)
+        store.store(makeTextItem("RECENT", createdBefore: 86400), limit: 100)
+        let pinned = makeTextItem("OLD_PINNED", createdBefore: 40 * 86400)
+        pinned.isPinned = true
+        store.store(pinned, limit: 100)
+
+        store.purgeExpired(olderThanDays: 30)
+
+        let items = try allItems()
+        XCTAssertEqual(items.count, 2)
+        XCTAssertFalse(items.contains { $0.textContent == "OLD" })
+        XCTAssertTrue(items.contains { $0.textContent == "RECENT" })
+        XCTAssertTrue(items.contains { $0.textContent == "OLD_PINNED" })
+    }
+
+    func testPurgeDisabledWhenDaysZero() throws {
+        store.store(makeTextItem("A", createdBefore: 100 * 86400), limit: 100)
+        store.purgeExpired(olderThanDays: 0)
+        XCTAssertEqual(try allItems().count, 1)
+    }
+
+    func testPurgeBoundaryExactlyOnCutoffKept() throws {
+        // 29 天前的保留，31 天前的删除
+        store.store(makeTextItem("JUST_INSIDE", createdBefore: 29 * 86400), limit: 100)
+        store.store(makeTextItem("JUST_OUTSIDE", createdBefore: 31 * 86400), limit: 100)
+
+        store.purgeExpired(olderThanDays: 30)
+
+        let items = try allItems()
+        XCTAssertEqual(items.count, 1)
+        XCTAssertTrue(items.contains { $0.textContent == "JUST_INSIDE" })
+    }
 }

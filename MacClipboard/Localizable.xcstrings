@@ -41,12 +41,42 @@
         }
       }
     },
+    "30 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 days"
+          }
+        }
+      }
+    },
     "500 条": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "500 items"
+          }
+        }
+      }
+    },
+    "7 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 days"
+          }
+        }
+      }
+    },
+    "90 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "90 days"
           }
         }
       }
@@ -77,6 +107,86 @@
           "stringUnit": {
             "state": "translated",
             "value": "⌘C Copy  |  ⌘P Pin  |  ⌘⌫ Delete  |  ⌘, Settings"
+          }
+        }
+      }
+    },
+    "中": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
+          }
+        }
+      }
+    },
+    "主题色": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accent Color"
+          }
+        }
+      }
+    },
+    "主题色-blue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blue"
+          }
+        }
+      }
+    },
+    "主题色-green": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Green"
+          }
+        }
+      }
+    },
+    "主题色-orange": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orange"
+          }
+        }
+      }
+    },
+    "主题色-pink": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pink"
+          }
+        }
+      }
+    },
+    "主题色-purple": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purple"
+          }
+        }
+      }
+    },
+    "主题色-system": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow System"
           }
         }
       }
@@ -291,6 +401,16 @@
         }
       }
     },
+    "历史保留时长": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History Retention"
+          }
+        }
+      }
+    },
     "取消": {
       "localizations": {
         "en": {
@@ -391,6 +511,26 @@
         }
       }
     },
+    "大": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Large"
+          }
+        }
+      }
+    },
+    "存储占用": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage Used"
+          }
+        }
+      }
+    },
     "存储留存": {
       "localizations": {
         "en": {
@@ -411,6 +551,26 @@
         }
       }
     },
+    "导出片段为 JSON": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Snippets as JSON"
+          }
+        }
+      }
+    },
+    "小": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Small"
+          }
+        }
+      }
+    },
     "屏蔽过滤": {
       "localizations": {
         "en": {
@@ -427,6 +587,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "App Blacklist (Bundle IDs, comma-separated)"
+          }
+        }
+      }
+    },
+    "录制类型": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record Types"
           }
         }
       }
@@ -477,6 +647,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search clipboard (⌥⇧V)..."
+          }
+        }
+      }
+    },
+    "数据管理": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data Management"
           }
         }
       }
@@ -611,12 +791,72 @@
         }
       }
     },
+    "此操作将删除全部历史与片段，且不可恢复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will permanently delete all history and snippets. This cannot be undone."
+          }
+        }
+      }
+    },
+    "永久保留": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep forever"
+          }
+        }
+      }
+    },
+    "清空": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        }
+      }
+    },
+    "清空全部数据": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear All Data"
+          }
+        }
+      }
+    },
+    "清空全部数据？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear All Data?"
+          }
+        }
+      }
+    },
     "清空历史": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Clear History"
+          }
+        }
+      }
+    },
+    "清空将删除全部历史与片段，且不可恢复，请先导出重要片段。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clearing removes all history and snippets permanently. Export important snippets first."
           }
         }
       }
@@ -731,6 +971,46 @@
         }
       }
     },
+    "自动清理": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto Cleanup"
+          }
+        }
+      }
+    },
+    "记录图片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record images"
+          }
+        }
+      }
+    },
+    "记录文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record files"
+          }
+        }
+      }
+    },
+    "记录文本与链接": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record text & links"
+          }
+        }
+      }
+    },
     "详情预览": {
       "localizations": {
         "en": {
@@ -747,6 +1027,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Oldest records are removed beyond the limit. Pinned items are never removed."
+          }
+        }
+      }
+    },
+    "超过保留时长的未置顶历史将被自动删除，片段与置顶卡片不受影响。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unpinned history older than the retention period is deleted automatically. Snippets and pinned items are never affected."
           }
         }
       }
@@ -827,6 +1117,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Accessibility Permission Required"
+          }
+        }
+      }
+    },
+    "面板尺寸": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panel Size"
           }
         }
       }

@@ -15,12 +15,38 @@ final class ClipboardMonitor: ObservableObject {
 
     private var changeCount: Int
     private var timer: Timer?
+    private var purgeTimer: Timer?
     private var store: HistoryStore
 
     init(modelContext: ModelContext) {
         self.store = HistoryStore(modelContext: modelContext)
         self.changeCount = NSPasteboard.general.changeCount
         startMonitoring()
+        startPurgeScheduler()
+    }
+
+    /// 启动时清理一次 + 每小时巡检；设置页调整保留天数后立即清理
+    private func startPurgeScheduler() {
+        purgeExpiredHistory()
+        purgeTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.purgeExpiredHistory()
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: AppSettings.retentionDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                self.purgeExpiredHistory()
+            }
+        }
+    }
+
+    private func purgeExpiredHistory() {
+        store.purgeExpired(olderThanDays: AppSettings.shared.historyRetentionDays)
     }
 
     func startMonitoring() {
@@ -59,6 +85,17 @@ final class ClipboardMonitor: ObservableObject {
         )
 
         guard let classification = ClipboardClassifier.classify(snapshot) else { return }
+
+        // 录制类型开关
+        let settings = AppSettings.shared
+        switch classification {
+        case .rtf, .color, .url, .text:
+            guard settings.recordText else { return }
+        case .image:
+            guard settings.recordImages else { return }
+        case .file:
+            guard settings.recordFiles else { return }
+        }
 
         let bundleID = frontmostApp?.bundleIdentifier
         switch classification {

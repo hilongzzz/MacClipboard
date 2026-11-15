@@ -83,10 +83,59 @@ final class AppSettings: ObservableObject {
         didSet { Self.defaults.set(historyLayout, forKey: "historyLayout") }
     }
 
+    // 面板尺寸："small" / "medium" / "large"
+    @Published var popoverSize: String {
+        didSet {
+            Self.defaults.set(popoverSize, forKey: "popoverSize")
+            Self.postAppearanceChanged()
+        }
+    }
+
+    // 主题色："system" 或预设色名
+    @Published var accentColorName: String {
+        didSet {
+            Self.defaults.set(accentColorName, forKey: "accentColorName")
+            Self.postAppearanceChanged()
+        }
+    }
+
+    // 历史自动清理保留天数（0 = 永久保留）
+    @Published var historyRetentionDays: Int {
+        didSet {
+            Self.defaults.set(historyRetentionDays, forKey: "historyRetentionDays")
+            if historyRetentionDays > 0 {
+                Self.postRetentionChanged()
+            }
+        }
+    }
+
+    // 录制类型开关
+    @Published var recordText: Bool {
+        didSet { Self.defaults.set(recordText, forKey: "recordText") }
+    }
+
+    @Published var recordImages: Bool {
+        didSet { Self.defaults.set(recordImages, forKey: "recordImages") }
+    }
+
+    @Published var recordFiles: Bool {
+        didSet { Self.defaults.set(recordFiles, forKey: "recordFiles") }
+    }
+
     static let hotkeyDidChangeNotification = Notification.Name("AppSettings.hotkeyDidChange")
+    static let appearanceDidChangeNotification = Notification.Name("AppSettings.appearanceDidChange")
+    static let retentionDidChangeNotification = Notification.Name("AppSettings.retentionDidChange")
 
     private static func postHotkeyChanged() {
         NotificationCenter.default.post(name: hotkeyDidChangeNotification, object: nil)
+    }
+
+    private static func postAppearanceChanged() {
+        NotificationCenter.default.post(name: appearanceDidChangeNotification, object: nil)
+    }
+
+    private static func postRetentionChanged() {
+        NotificationCenter.default.post(name: retentionDidChangeNotification, object: nil)
     }
 
     private init() {
@@ -114,6 +163,12 @@ final class AppSettings: ObservableObject {
         hotkeyCode = d.object(forKey: "hotkeyCode") as? Int ?? 9
         hotkeyDisplay = d.string(forKey: "hotkeyDisplay") ?? "V"
         historyLayout = d.string(forKey: "historyLayout") ?? "list"
+        popoverSize = d.string(forKey: "popoverSize") ?? "medium"
+        accentColorName = d.string(forKey: "accentColorName") ?? "system"
+        historyRetentionDays = d.object(forKey: "historyRetentionDays") as? Int ?? 0
+        recordText = d.object(forKey: "recordText") as? Bool ?? true
+        recordImages = d.object(forKey: "recordImages") as? Bool ?? true
+        recordFiles = d.object(forKey: "recordFiles") as? Bool ?? true
     }
 
     var excludedBundleIDSet: Set<String> {
