@@ -142,27 +142,34 @@ struct MenuBarView: View {
             .padding(10)
             .background(Color(NSColor.controlBackgroundColor))
 
-            // 模式切换（历史 / 片段）+ 分类筛选（仅历史模式）
-            HStack(spacing: 8) {
+            // 模式切换（历史 / 片段）——独立一行，避免与分类筛选在窄面板/英文下互相挤压
+            HStack {
                 Picker("模式", selection: $mode) {
                     ForEach(PanelMode.allCases) { m in
                         Text(m.displayName).tag(m)
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 120)
+                .labelsHidden()
+                .fixedSize(horizontal: true, vertical: false)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
 
-                if mode == .history {
+            // 分类筛选（仅历史模式）
+            if mode == .history {
+                HStack {
                     Picker("分类", selection: $selectedCategory) {
                         ForEach(CategoryFilter.allCases) { category in
                             Text(category.displayName).tag(category)
                         }
                     }
                     .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
 
             // 片段分组过滤栏（Boards）
             if mode == .snippets {
