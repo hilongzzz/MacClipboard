@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Release (unsigned)
+        run: |
+          xcodebuild -project MacClipboard.xcodeproj \
+            -scheme MacClipboard \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            build CODE_SIGNING_ALLOWED=NO
+
+      - name: Package DMG
+        run: |
+          mkdir -p build/DMG_Staging
+          cp -R build/DerivedData/Build/Products/Release/MacClipboard.app build/DMG_Staging/
+          ln -s /Applications build/DMG_Staging/Applications
+          hdiutil create -volname "MacClipboard" \
+            -srcfolder build/DMG_Staging \
+            -ov -format UDZO \
+            "MacClipboard-${GITHUB_REF_NAME}.dmg"
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: MacClipboard-*.dmg
+          generate_release_notes: true

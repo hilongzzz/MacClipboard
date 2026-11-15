@@ -2,7 +2,7 @@
 
 > 一个轻量、高效且美观的 macOS 菜单栏剪贴板管理工具。基于 **SwiftUI + SwiftData + AppKit** 打造。
 
-![MacClipboard Banner](file:///Users/yunlongzhang/.gemini/antigravity/brain/5d65a46f-6b82-479c-bb7a-154fde0bc062/macclipboard_app_icon_1785764046054.jpg)
+![MacClipboard Icon](MacClipboard/Assets.xcassets/AppIcon.appiconset/app_icon_256.png)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: macOS](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey.svg)](https://apple.com/macos)
@@ -14,12 +14,16 @@
 
 - 🚀 **全局唤出与快捷键盘导航**：按 `⌥⇧V` (Option + Shift + V) 随时唤出，支持键盘 `↑/↓` 翻页选择与 `Enter` 快捷粘贴。
 - ⚡️ **智能去重与自动淘汰**：连续复制相同文本/图片自动更新置顶时间，自定义存储容量上限（100 ~ 2000 条）。
-- 🎨 **多类型识别与展示**：自动分类展示文本、纯文本、富文本 (RTF)、图片、网页链接及 HEX 颜色值色块。
+- 🎨 **多类型识别与展示**：自动分类展示文本、纯文本、富文本 (RTF)、图片、网页链接、Finder 文件引用及 HEX 颜色值色块。
 - 🔒 **隐私与黑名单屏蔽**：
   - 自动拦截 1Password、Bitwarden、KeePassXC、Keychain Access 等密码管理器。
   - 正则表达式敏感字段过滤（如信用卡号、身份证号自动忽略）。
   - 支持快捷开启「无痕模式」(Incognito Mode)，状态栏图标实时联动显示 `eye.slash`。
-- 🛠 **灵活粘贴模式**：支持一键切换「自动模拟 Cmd+V 粘贴」与「纯文本粘贴 (Paste as Plain Text)」。
+- 🛠 **灵活粘贴模式**：支持一键切换「自动模拟 Cmd+V 粘贴」与「纯文本粘贴 (Paste as Plain Text)」，也可 `Shift + 点击` 单次强制纯文本。
+- 🔐 **本地加密存储**：历史内容（含图片 / RTF）以 AES-GCM 加密落盘，密钥保存在系统 Keychain。
+- 🌍 **中英双语**：基于 String Catalog 的界面国际化（zh-Hans / en）。
+- 📌 **片段库 (Snippets)**：将高频内容保存为命名片段（文本 / 图片），独立于历史、永不淘汰；支持右键或 `⌘S` 从历史一键保存、重命名与搜索。
+- ⚡ **上下文快速操作**：链接卡片直接「打开链接」、文件卡片「在 Finder 中显示」、文本卡片「用 Google 搜索」、颜色卡片「复制 RGB / HSL」。
 - 🖱 **原生右键状态栏菜单**：右键菜单栏图标快速调出设置、切换无痕模式或退出应用。
 
 ---
@@ -31,9 +35,13 @@
 | `⌥⇧V` | 全局唤出 / 隐藏剪贴板面板 |
 | `↑` / `↓` | 列表中上下选择卡片 |
 | `Enter` | 粘贴当前选中卡片 |
+| `空格` | 预览当前选中卡片（长文本 / 大图 / 文件路径） |
 | `⌘C` | 将当前选中卡片复制到剪贴板 |
 | `⌘P` | 置顶 / 取消置顶当前卡片 |
+| `⌘⌫` | 删除当前选中卡片 |
+| `⌘S` | 将当前选中卡片保存为片段 |
 | `⌘,` | 打开偏好设置 |
+| `Shift + 点击` | 本次强制以纯文本粘贴 |
 
 ---
 
@@ -41,7 +49,7 @@
 
 ### 方式 1：直接下载 DMG (推荐)
 
-在 [Releases](https://github.com/your-username/MacClipboard/releases) 页面下载最新的 `MacClipboard.dmg`：
+在 [Releases](https://github.com/hilongzzz/MacClipboard/releases) 页面下载最新的 `MacClipboard.dmg`：
 
 1. 双击打开 `MacClipboard.dmg`。
 2. 将 **MacClipboard.app** 拖入 **Applications** 文件夹。
@@ -51,7 +59,7 @@
 
 ```bash
 # 1. 克隆代码库
-git clone https://github.com/your-username/MacClipboard.git
+git clone https://github.com/hilongzzz/MacClipboard.git
 cd MacClipboard
 
 # 2. 使用 xcodebuild 编译 Release App
