@@ -1,0 +1,746 @@
+{
+  "sourceLanguage": "zh-Hans",
+  "strings": {
+    "%lld 个文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld files"
+          }
+        }
+      }
+    },
+    "100 条": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100 items"
+          }
+        }
+      }
+    },
+    "1000 条": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1000 items"
+          }
+        }
+      }
+    },
+    "2000 条": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2000 items"
+          }
+        }
+      }
+    },
+    "500 条": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "500 items"
+          }
+        }
+      }
+    },
+    "MacClipboard 偏好设置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MacClipboard Preferences"
+          }
+        }
+      }
+    },
+    "MacClipboard 需要辅助功能权限以自动触发 Cmd+V 粘贴。请在【系统设置 -> 隐私与安全性 -> 辅助功能】中允许 MacClipboard。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MacClipboard needs Accessibility permission to simulate Cmd+V for pasting. Please allow it in System Settings > Privacy & Security > Accessibility."
+          }
+        }
+      }
+    },
+    "⌘C 复制  |  ⌘P 置顶  |  ⌘⌫ 删除  |  ⌘, 设置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘C Copy  |  ⌘P Pin  |  ⌘⌫ Delete  |  ⌘, Settings"
+          }
+        }
+      }
+    },
+    "例如: com.apple.Terminal, com.googlecode.iterm2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. com.apple.Terminal, com.googlecode.iterm2"
+          }
+        }
+      }
+    },
+    "保存": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        }
+      }
+    },
+    "保存为片段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save as Snippet"
+          }
+        }
+      }
+    },
+    "保留最大条数": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max History Count"
+          }
+        }
+      }
+    },
+    "偏好设置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferences"
+          }
+        }
+      }
+    },
+    "偏好设置...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferences..."
+          }
+        }
+      }
+    },
+    "全部": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        }
+      }
+    },
+    "共 %lld 个片段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld snippets"
+          }
+        }
+      }
+    },
+    "共 %lld 条历史": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items in history"
+          }
+        }
+      }
+    },
+    "关于与权限": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About & Permissions"
+          }
+        }
+      }
+    },
+    "分类": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Category"
+          }
+        }
+      }
+    },
+    "列表快捷键": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List Shortcuts"
+          }
+        }
+      }
+    },
+    "删除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "前往设置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        }
+      }
+    },
+    "历史": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        }
+      }
+    },
+    "取消": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "取消置顶": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unpin"
+          }
+        }
+      }
+    },
+    "可在系统设置的键盘快捷键中重新进行全局绑定。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can rebind the global shortcut in System Settings > Keyboard > Keyboard Shortcuts."
+          }
+        }
+      }
+    },
+    "唤出主界面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Panel"
+          }
+        }
+      }
+    },
+    "唤出剪贴板 (⌥⇧V)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Clipboard (⌥⇧V)"
+          }
+        }
+      }
+    },
+    "图片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Images"
+          }
+        }
+      }
+    },
+    "图片片段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image snippet"
+          }
+        }
+      }
+    },
+    "在 Finder 中显示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reveal in Finder"
+          }
+        }
+      }
+    },
+    "基础选项": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        }
+      }
+    },
+    "复制 HSL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy HSL"
+          }
+        }
+      }
+    },
+    "复制 RGB": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy RGB"
+          }
+        }
+      }
+    },
+    "复制与粘贴播放提示音": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play sound on copy & paste"
+          }
+        }
+      }
+    },
+    "存储留存": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage"
+          }
+        }
+      }
+    },
+    "富文本": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rich Text"
+          }
+        }
+      }
+    },
+    "屏蔽过滤": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocking & Filtering"
+          }
+        }
+      }
+    },
+    "应用黑名单 (Bundle ID，逗号分隔)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Blacklist (Bundle IDs, comma-separated)"
+          }
+        }
+      }
+    },
+    "忽略富文本样式（统一以纯文本粘贴）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignore rich text styles (always paste as plain text)"
+          }
+        }
+      }
+    },
+    "打开系统设置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        }
+      }
+    },
+    "打开链接": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Link"
+          }
+        }
+      }
+    },
+    "搜索剪切板 (⌥⇧V)...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search clipboard (⌥⇧V)..."
+          }
+        }
+      }
+    },
+    "文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files"
+          }
+        }
+      }
+    },
+    "文本": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text"
+          }
+        }
+      }
+    },
+    "新建片段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Snippet"
+          }
+        }
+      }
+    },
+    "无痕模式": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incognito Mode"
+          }
+        }
+      }
+    },
+    "暂无记录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No clipboard history"
+          }
+        }
+      }
+    },
+    "权限已正常开启，支持自动模拟 Cmd+V 执行快捷粘贴。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission granted. Auto-paste via simulated Cmd+V is available."
+          }
+        }
+      }
+    },
+    "模式": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mode"
+          }
+        }
+      }
+    },
+    "正则匹配表达式": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regular expression"
+          }
+        }
+      }
+    },
+    "正则表达式敏感字段屏蔽 (逗号分隔)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sensitive Regex Filters (comma-separated)"
+          }
+        }
+      }
+    },
+    "清空历史": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear History"
+          }
+        }
+      }
+    },
+    "片段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snippets"
+          }
+        }
+      }
+    },
+    "片段内容": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snippet content"
+          }
+        }
+      }
+    },
+    "片段标题": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snippet title"
+          }
+        }
+      }
+    },
+    "版本 %@ (Build %@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ (Build %@)"
+          }
+        }
+      }
+    },
+    "用 Google 搜索": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search with Google"
+          }
+        }
+      }
+    },
+    "粘贴": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste"
+          }
+        }
+      }
+    },
+    "粘贴行为": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasting Behavior"
+          }
+        }
+      }
+    },
+    "系统权限状态": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Permissions"
+          }
+        }
+      }
+    },
+    "缺失辅助功能权限时，无法自动模拟 Cmd+V 粘贴。请在系统设置中允许。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without Accessibility permission, auto-paste via Cmd+V is unavailable. Please allow it in System Settings."
+          }
+        }
+      }
+    },
+    "置顶": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin"
+          }
+        }
+      }
+    },
+    "详情预览": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        }
+      }
+    },
+    "超出上限后将自动淘汰最旧的记录。被【置顶】的卡片不会被淘汰。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oldest records are removed beyond the limit. Pinned items are never removed."
+          }
+        }
+      }
+    },
+    "退出 MacClipboard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit MacClipboard"
+          }
+        }
+      }
+    },
+    "选中卡片后自动触发 Cmd+V 粘贴": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically simulate Cmd+V after selecting an item"
+          }
+        }
+      }
+    },
+    "通用与粘贴": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General & Pasting"
+          }
+        }
+      }
+    },
+    "重命名": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename"
+          }
+        }
+      }
+    },
+    "重命名片段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename Snippet"
+          }
+        }
+      }
+    },
+    "链接": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Links"
+          }
+        }
+      }
+    },
+    "需要辅助功能权限": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility Permission Required"
+          }
+        }
+      }
+    },
+    "颜色": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colors"
+          }
+        }
+      }
+    },
+    "默认": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

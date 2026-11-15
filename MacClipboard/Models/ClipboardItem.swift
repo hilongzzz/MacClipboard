@@ -15,6 +15,7 @@ enum ItemType: String, Codable {
     case rtf
     case color
     case url
+    case file
 }
 
 @Model
@@ -26,15 +27,35 @@ final class ClipboardItem {
     var rtfData: Data?
     var colorHex: String?
     var urlString: String?
+    var filePaths: [String]?
+    @Attribute(.externalStorage) var thumbnailData: Data?
+    var contentHash: String?
     var sourceAppBundleID: String?
     var createdAt: Date
     var isPinned: Bool
-    
+
     var type: ItemType {
         get { ItemType(rawValue: typeRaw) ?? .text }
         set { typeRaw = newValue.rawValue }
     }
-    
+
+    /// 明文图片数据（落盘内容为 AES-GCM 密文，展示/粘贴时解密）
+    var plainImageData: Data? {
+        imageData.map(ContentCrypto.decrypt(data:))
+    }
+
+    var plainThumbnailData: Data? {
+        thumbnailData.map(ContentCrypto.decrypt(data:))
+    }
+
+    var plainRTFData: Data? {
+        rtfData.map(ContentCrypto.decrypt(data:))
+    }
+
+    var fileNames: [String] {
+        (filePaths ?? []).map { ($0 as NSString).lastPathComponent }
+    }
+
     init(
         type: ItemType,
         textContent: String? = nil,
@@ -42,7 +63,9 @@ final class ClipboardItem {
         rtfData: Data? = nil,
         colorHex: String? = nil,
         urlString: String? = nil,
-        sourceAppBundleID: String? = nil
+        sourceAppBundleID: String? = nil,
+        filePaths: [String]? = nil,
+        thumbnailData: Data? = nil
     ) {
         self.id = UUID()
         self.typeRaw = type.rawValue
@@ -52,6 +75,8 @@ final class ClipboardItem {
         self.colorHex = colorHex
         self.urlString = urlString
         self.sourceAppBundleID = sourceAppBundleID
+        self.filePaths = filePaths
+        self.thumbnailData = thumbnailData
         self.createdAt = Date()
         self.isPinned = false
     }

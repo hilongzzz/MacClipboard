@@ -9,6 +9,7 @@ import AppKit
 import SwiftUI
 import SwiftData
 import Combine
+import Carbon.HIToolbox
 
 @MainActor
 final class StatusBarManager: NSObject {
@@ -18,11 +19,15 @@ final class StatusBarManager: NSObject {
     private var onOpenSettings: () -> Void
     private var cancellables = Set<AnyCancellable>()
 
+    // Carbon 全局热键句柄
+    private var hotKeyRef: EventHotKeyRef?
+    private var hotKeyEventHandler: EventHandlerRef?
+
     init(container: ModelContainer, monitor: ClipboardMonitor, onOpenSettings: @escaping () -> Void) {
         self.monitor = monitor
         self.onOpenSettings = onOpenSettings
         super.init()
-        
+
         // 1. 初始化 MenuBar 图标（自动适配浅色/深色主题）
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
@@ -51,13 +56,15 @@ final class StatusBarManager: NSObject {
             }
         )
         .modelContainer(container)
-        
+
         popover = NSPopover()
         popover.contentSize = NSSize(width: 360, height: 420)
         popover.behavior = .transient // 点击弹窗外部区域自动隐藏
         popover.contentViewController = NSHostingController(rootView: popoverView)
 
-        // 3. 注册全局快捷键监听 (Option + Shift + V)
+        // 3. 注册全局快捷键 (Option + Shift + V)
+        // 使用 Carbon RegisterEventHotKey：应用自身聚焦时同样生效
+        // （NSEvent.addGlobalMonitorForEvents 在本应用获得焦点时收不到事件）
         registerGlobalHotkey()
     }
 
@@ -86,30 +93,46 @@ final class StatusBarManager: NSObject {
 
     private func showContextMenu() {
         let menu = NSMenu()
-        
-        let showItem = NSMenuItem(title: "唤出剪贴板 (⌥⇧V)", action: #selector(togglePopover), keyEquivalent: "")
+
+        let showItem = NSMenuItem(
+            title: NSLocalizedString("唤出剪贴板 (⌥⇧V)", comment: ""),
+            action: #selector(togglePopover),
+            keyEquivalent: ""
+        )
         showItem.target = self
         menu.addItem(showItem)
-        
+
         menu.addItem(NSMenuItem.separator())
-        
-        let incognitoItem = NSMenuItem(title: "无痕模式", action: #selector(toggleIncognito), keyEquivalent: "")
+
+        let incognitoItem = NSMenuItem(
+            title: NSLocalizedString("无痕模式", comment: ""),
+            action: #selector(toggleIncognito),
+            keyEquivalent: ""
+        )
         incognitoItem.target = self
         incognitoItem.state = monitor.isIncognito ? .on : .off
         menu.addItem(incognitoItem)
-        
+
         menu.addItem(NSMenuItem.separator())
-        
-        let settingsItem = NSMenuItem(title: "偏好设置...", action: #selector(openSettingsFromMenu), keyEquivalent: ",")
+
+        let settingsItem = NSMenuItem(
+            title: NSLocalizedString("偏好设置...", comment: ""),
+            action: #selector(openSettingsFromMenu),
+            keyEquivalent: ","
+        )
         settingsItem.target = self
         menu.addItem(settingsItem)
-        
+
         menu.addItem(NSMenuItem.separator())
-        
-        let quitItem = NSMenuItem(title: "退出 MacClipboard", action: #selector(quitApp), keyEquivalent: "q")
+
+        let quitItem = NSMenuItem(
+            title: NSLocalizedString("退出 MacClipboard", comment: ""),
+            action: #selector(quitApp),
+            keyEquivalent: "q"
+        )
         quitItem.target = self
         menu.addItem(quitItem)
-        
+
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
         statusItem.menu = nil
@@ -136,16 +159,34 @@ final class StatusBarManager: NSObject {
         }
     }
 
+    // MARK: - 全局热键 (⌥⇧V)
+
     private func registerGlobalHotkey() {
-        // 监听全局键盘按键按下事件
-        NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            // Option (4096) + Shift (131072) + 'V' (keyCode 9)
-            if flags == [.option, .shift] && event.keyCode == 9 {
-                Task { @MainActor in
-                    self?.togglePopover()
-                }
+        // 'MCLB' 签名，用于标识本应用注册的热键
+        let hotKeyID = EventHotKeyID(signature: OSType(0x4D434C42), id: 1)
+        var eventType = EventTypeSpec(
+            eventClass: OSType(kEventClassKeyboard),
+            eventKind: UInt32(kEventHotKeyPressed)
+        )
+
+        let context = Unmanaged.passUnretained(self).toOpaque()
+        let callback: EventHandlerUPP = { _, _, userData in
+            guard let userData else { return noErr }
+            let manager = Unmanaged<StatusBarManager>.fromOpaque(userData).takeUnretainedValue()
+            Task { @MainActor in
+                manager.togglePopover()
             }
+            return noErr
         }
+
+        InstallEventHandler(GetApplicationEventTarget(), callback, 1, &eventType, context, &hotKeyEventHandler)
+        RegisterEventHotKey(
+            UInt32(kVK_ANSI_V),
+            UInt32(optionKey | shiftKey),
+            hotKeyID,
+            GetApplicationEventTarget(),
+            0,
+            &hotKeyRef
+        )
     }
 }

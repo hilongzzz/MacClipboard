@@ -15,34 +15,80 @@ struct AutoPaster {
         return AXIsProcessTrustedWithOptions(options as CFDictionary)
     }
 
-    // 将内容写回剪切板并触发生效 Cmd + V
-    static func paste(item: ClipboardItem) {
+    /// 仅写回剪贴板，不触发模拟按键（⌘C 快捷复制使用）
+    static func copy(item: ClipboardItem) {
+        writeToPasteboard(item)
+    }
+
+    /// 片段版本：仅写回剪贴板
+    static func copy(snippet: Snippet) {
+        writeSnippetToPasteboard(snippet)
+    }
+
+    /// 片段版本：写回剪贴板并按设置触发模拟 Cmd+V
+    static func paste(snippet: Snippet, forcePlainText: Bool = false) {
+        writeSnippetToPasteboard(snippet)
+
+        if AppSettings.shared.autoPasteAfterCopy {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                simulateCmdV()
+            }
+        }
+    }
+
+    private static func writeSnippetToPasteboard(_ snippet: Snippet) {
         let pb = NSPasteboard.general
         pb.clearContents()
-        
-        let pastePlaintextOnly = AppSettings.shared.pastePlaintextOnly
-        
+
+        switch snippet.type {
+        case .image:
+            if let data = snippet.plainImageData, let image = NSImage(data: data) {
+                pb.writeObjects([image])
+            }
+        default:
+            if let text = snippet.textContent {
+                pb.setString(text, forType: .string)
+            }
+        }
+    }
+
+    /// 写回剪贴板并按设置触发模拟 Cmd+V；forcePlainText 单次强制纯文本（Shift+点击）
+    static func paste(item: ClipboardItem, forcePlainText: Bool = false) {
+        writeToPasteboard(item, forcePlainText: forcePlainText)
+
+        if AppSettings.shared.autoPasteAfterCopy {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                simulateCmdV()
+            }
+        }
+    }
+
+    private static func writeToPasteboard(_ item: ClipboardItem, forcePlainText: Bool = false) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+
+        let pastePlaintextOnly = AppSettings.shared.pastePlaintextOnly || forcePlainText
+
         switch item.type {
         case .rtf:
-            if !pastePlaintextOnly, let rtfData = item.rtfData {
+            if !pastePlaintextOnly, let rtfData = item.plainRTFData {
                 pb.setData(rtfData, forType: .rtf)
             }
             if let text = item.textContent {
                 pb.setString(text, forType: .string)
             }
         case .image:
-            if let data = item.imageData, let image = NSImage(data: data) {
+            if let data = item.plainImageData, let image = NSImage(data: data) {
                 pb.writeObjects([image])
+            }
+        case .file:
+            let urls = (item.filePaths ?? []).map { URL(fileURLWithPath: $0) }
+            if !urls.isEmpty {
+                pb.writeObjects(urls as [NSURL])
             }
         case .color, .url, .text:
             if let text = item.textContent {
                 pb.setString(text, forType: .string)
-            }
-        }
-        
-        if AppSettings.shared.autoPasteAfterCopy {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                simulateCmdV()
             }
         }
     }
@@ -52,15 +98,15 @@ struct AutoPaster {
             promptForAccessibilityPermission()
             return
         }
-        
+
         let source = CGEventSource(stateID: .combinedSessionState)
         let vKeyCode: CGKeyCode = 0x09
-        
+
         let keyDown = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: true)
         keyDown?.flags = .maskCommand
         let keyUp = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: false)
         keyUp?.flags = .maskCommand
-        
+
         keyDown?.post(tap: .cghidEventTap)
         keyUp?.post(tap: .cghidEventTap)
     }
@@ -68,12 +114,15 @@ struct AutoPaster {
     private static func promptForAccessibilityPermission() {
         DispatchQueue.main.async {
             let alert = NSAlert()
-            alert.messageText = "需要辅助功能权限"
-            alert.informativeText = "MacClipboard 需要辅助功能权限以自动触发 Cmd+V 粘贴。请在【系统设置 -> 隐私与安全性 -> 辅助功能】中允许 MacClipboard。"
+            alert.messageText = NSLocalizedString("需要辅助功能权限", comment: "")
+            alert.informativeText = NSLocalizedString(
+                "MacClipboard 需要辅助功能权限以自动触发 Cmd+V 粘贴。请在【系统设置 -> 隐私与安全性 -> 辅助功能】中允许 MacClipboard。",
+                comment: ""
+            )
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "打开系统设置")
-            alert.addButton(withTitle: "取消")
-            
+            alert.addButton(withTitle: NSLocalizedString("打开系统设置", comment: ""))
+            alert.addButton(withTitle: NSLocalizedString("取消", comment: ""))
+
             let response = alert.runModal()
             if response == .alertFirstButtonReturn {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {

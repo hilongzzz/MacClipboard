@@ -7,37 +7,76 @@
 
 import Foundation
 import SwiftUI
-import Combine // 1. 必须导入 Combine 框架以提供 ObservableObject 协议支持
+import Combine
 import ServiceManagement
 
+/// 全局设置单例。
+/// 注意：不使用 `@AppStorage`——它包在 ObservableObject 内不会触发 objectWillChange，
+/// 这里改为 `@Published` + UserDefaults 手动同步，键名与历史版本保持一致。
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
-    
+    private static let defaults = UserDefaults.standard
+
     // 开机自启 (macOS 13+)
-    @AppStorage("launchAtLogin") var launchAtLogin: Bool = false {
+    @Published var launchAtLogin: Bool {
         didSet {
+            Self.defaults.set(launchAtLogin, forKey: "launchAtLogin")
             updateLaunchAtLogin()
         }
     }
-    
+
     // 音效开关
-    @AppStorage("enableSoundEffects") var enableSoundEffects: Bool = true
-    
+    @Published var enableSoundEffects: Bool {
+        didSet { Self.defaults.set(enableSoundEffects, forKey: "enableSoundEffects") }
+    }
+
     // 自动粘贴（是否选中后自动模拟 Cmd+V）
-    @AppStorage("autoPasteAfterCopy") var autoPasteAfterCopy: Bool = true
-    
+    @Published var autoPasteAfterCopy: Bool {
+        didSet { Self.defaults.set(autoPasteAfterCopy, forKey: "autoPasteAfterCopy") }
+    }
+
     // 纯文本粘贴（忽略富文本样式）
-    @AppStorage("pastePlaintextOnly") var pastePlaintextOnly: Bool = false
-    
+    @Published var pastePlaintextOnly: Bool {
+        didSet { Self.defaults.set(pastePlaintextOnly, forKey: "pastePlaintextOnly") }
+    }
+
     // 存储上限 (默认 500 条)
-    @AppStorage("maxHistoryCount") var maxHistoryCount: Int = 500
-    
+    @Published var maxHistoryCount: Int {
+        didSet { Self.defaults.set(maxHistoryCount, forKey: "maxHistoryCount") }
+    }
+
     // 自定义黑名单 App Bundle ID 列表 (逗号分隔)
-    @AppStorage("customExcludedBundleIDs") var customExcludedBundleIDs: String = "com.apple.Terminal,com.googlecode.iterm2"
-    
-    // 正则表达式过滤 (逗号分隔，匹配则不记录)
-    @AppStorage("sensitiveRegexPatterns") var sensitiveRegexPatterns: String = "\\b(?:\\d[ -]*?){13,16}\\b"
-    
+    @Published var customExcludedBundleIDs: String {
+        didSet { Self.defaults.set(customExcludedBundleIDs, forKey: "customExcludedBundleIDs") }
+    }
+
+    // 正则表达式过滤 (每行一条，匹配则不记录)
+    @Published var sensitiveRegexPatterns: String {
+        didSet { Self.defaults.set(sensitiveRegexPatterns, forKey: "sensitiveRegexPatterns") }
+    }
+
+    private init() {
+        let d = Self.defaults
+        launchAtLogin = d.object(forKey: "launchAtLogin") as? Bool ?? false
+        enableSoundEffects = d.object(forKey: "enableSoundEffects") as? Bool ?? true
+        autoPasteAfterCopy = d.object(forKey: "autoPasteAfterCopy") as? Bool ?? true
+        pastePlaintextOnly = d.object(forKey: "pastePlaintextOnly") as? Bool ?? false
+        maxHistoryCount = d.object(forKey: "maxHistoryCount") as? Int ?? 500
+        customExcludedBundleIDs = d.string(forKey: "customExcludedBundleIDs")
+            ?? "com.apple.Terminal,com.googlecode.iterm2"
+        let defaultSensitiveRegex = "(?<!\\d)(?:\\d[ -]*?){13,16}(?!\\d)"
+        if let stored = d.string(forKey: "sensitiveRegexPatterns") {
+            if stored == "\\b(?:\\d[ -]*?){13,16}\\b" {
+                // 旧默认正则受「逗号切分」缺陷影响从未生效，静默升级为新默认
+                sensitiveRegexPatterns = defaultSensitiveRegex
+            } else {
+                sensitiveRegexPatterns = stored
+            }
+        } else {
+            sensitiveRegexPatterns = defaultSensitiveRegex
+        }
+    }
+
     var excludedBundleIDSet: Set<String> {
         let defaultExcludes = [
             "com.agilebits.onepassword7",
@@ -46,10 +85,12 @@ final class AppSettings: ObservableObject {
             "com.keepassxc.keepassxc",
             "com.apple.keychainaccess"
         ]
-        let customExcludes = customExcludedBundleIDs.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        let customExcludes = customExcludedBundleIDs
+            .components(separatedBy: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
         return Set(defaultExcludes + customExcludes)
     }
-    
+
     private func updateLaunchAtLogin() {
         do {
             if launchAtLogin {

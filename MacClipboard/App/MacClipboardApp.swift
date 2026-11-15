@@ -27,7 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         do {
-            let modelContainer = try ModelContainer(for: ClipboardItem.self)
+            let modelContainer = try ModelContainer(for: ClipboardItem.self, Snippet.self)
             self.container = modelContainer
 
             let monitorInstance = ClipboardMonitor(modelContext: modelContainer.mainContext)
@@ -62,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     defer: false
                 )
                 window.center()
-                window.title = "MacClipboard 偏好设置"
+                window.title = NSLocalizedString("MacClipboard 偏好设置", comment: "")
                 window.contentViewController = hostingController
                 window.isReleasedWhenClosed = false
                 self.settingsWindow = window
