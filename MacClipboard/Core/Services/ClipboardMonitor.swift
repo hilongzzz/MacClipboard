@@ -17,12 +17,38 @@ final class ClipboardMonitor: ObservableObject {
     private var timer: Timer?
     private var purgeTimer: Timer?
     private var store: HistoryStore
+    private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {
         self.store = HistoryStore(modelContext: modelContext)
+        self.modelContext = modelContext
         self.changeCount = NSPasteboard.general.changeCount
         startMonitoring()
         startPurgeScheduler()
+        preWarmImageCache()
+    }
+
+    /// 后台预热图片缓存：把加密数据快照交给后台线程解密+解码，
+    /// 主线程首次渲染即命中缓存（SwiftData 模型不可跨线程读取，先在主线程取值）
+    private func preWarmImageCache(latest: Int = 50) {
+        struct Blob {
+            let id: UUID
+            let thumbnail: Data?
+            let full: Data?
+        }
+        var descriptor = FetchDescriptor<ClipboardItem>(
+            sortBy: [SortDescriptor(\ClipboardItem.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = latest
+        guard let items = try? modelContext.fetch(descriptor) else { return }
+        let blobs = items.map { Blob(id: $0.id, thumbnail: $0.thumbnailData, full: $0.imageData) }
+        guard !blobs.isEmpty else { return }
+
+        Task.detached(priority: .utility) {
+            for blob in blobs {
+                ClipboardImageCache.image(forKey: "history-\(blob.id)", thumbnail: blob.thumbnail, full: blob.full)
+            }
+        }
     }
 
     /// 启动时清理一次 + 每小时巡检；设置页调整保留天数后立即清理
@@ -139,13 +165,21 @@ final class ClipboardMonitor: ObservableObject {
                 let ocrText = AppSettings.shared.imageOCR
                     ? await ImageTextRecognizer.recognizeText(fromPNG: pngData)
                     : nil
-                await MainActor.run { [weak self] in
+                let newID = await MainActor.run { [weak self] in
                     self?.storeItem(
                         type: .image,
                         textContent: ocrText,
                         plainImage: pngData,
                         plainThumbnail: thumbnailData,
                         bundleID: bundleID
+                    )
+                }
+                // 后台预热：入库瞬间起主线程渲染即命中缓存
+                if let id = newID {
+                    ClipboardImageCache.seedDecrypted(
+                        forKey: "history-\(id)",
+                        thumbnailPlain: thumbnailData,
+                        fullPlain: pngData
                     )
                 }
             }
@@ -206,6 +240,7 @@ final class ClipboardMonitor: ObservableObject {
     }
 
     /// 统一入库入口：加密敏感数据、计算内容哈希，然后写入
+    @discardableResult
     private func storeItem(
         type: ItemType,
         textContent: String? = nil,
@@ -216,7 +251,7 @@ final class ClipboardMonitor: ObservableObject {
         bundleID: String?,
         colorHex: String? = nil,
         urlString: String? = nil
-    ) {
+    ) -> UUID? {
         let item = ClipboardItem(
             type: type,
             textContent: textContent,
@@ -244,9 +279,11 @@ final class ClipboardMonitor: ObservableObject {
         // 拼音索引：含中文的文本内容（含图片 OCR 结果、文件名）生成后参与搜索
         item.pinyinIndex = textContent.flatMap { PinyinIndex.index(for: $0) }
 
-        if store.store(item, limit: AppSettings.shared.maxHistoryCount) == .inserted {
+        let outcome = store.store(item, limit: AppSettings.shared.maxHistoryCount)
+        if outcome == .inserted {
             SoundManager.playCopySound()
         }
+        return item.id
     }
 
     private func matchesSensitiveRegex(_ text: String) -> Bool {

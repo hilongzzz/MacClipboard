@@ -23,7 +23,7 @@ final class StatusBarManager: NSObject {
     private var hotKeyRef: EventHotKeyRef?
     private var hotKeyEventHandler: EventHandlerRef?
 
-    init(container: ModelContainer, monitor: ClipboardMonitor, onOpenSettings: @escaping () -> Void) {
+    init(container: ModelContainer, monitor: ClipboardMonitor, onOpenSettings: @escaping () -> Void, onDismiss: @escaping () -> Void) {
         self.monitor = monitor
         self.onOpenSettings = onOpenSettings
         super.init()
@@ -54,6 +54,9 @@ final class StatusBarManager: NSObject {
             onOpenSettings: { [weak self] in
                 self?.panel.orderOut(nil) // 打开设置时自动收起面板
                 onOpenSettings()
+            },
+            onDismiss: {
+                onDismiss()
             }
         )
         .modelContainer(container)
@@ -116,6 +119,11 @@ final class StatusBarManager: NSObject {
         applyPanelSizeIfNeeded()
         positionPanelBelowStatusItem()
         panel.makeKeyAndOrderFront(nil)
+    }
+
+    /// ESC 等入口关闭面板（不动热键状态）
+    func dismissPanel() {
+        panel.orderOut(nil)
     }
 
     private func applyPanelSizeIfNeeded() {

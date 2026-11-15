@@ -27,6 +27,23 @@ enum ClipboardImageCache {
         return plain
     }
 
+    /// 后台管线预热：已在后台持有明文（PNG 编码产物）时直接种入两级缓存，
+    /// 入库瞬间起主线程渲染即为缓存命中
+    static func seedDecrypted(forKey key: String, thumbnailPlain: Data?, fullPlain: Data?) {
+        if let t = thumbnailPlain {
+            dataCache.setObject(t as NSData, forKey: (key + ".t") as NSString)
+            if let image = NSImage(data: t) {
+                imageCache.setObject(image, forKey: (key + ".t") as NSString)
+            }
+        }
+        if let f = fullPlain {
+            dataCache.setObject(f as NSData, forKey: (key + ".f") as NSString)
+            if let image = NSImage(data: f) {
+                imageCache.setObject(image, forKey: (key + ".f") as NSString)
+            }
+        }
+    }
+
     /// 优先缩略图，缺失时回退原图；两级缓存（数据 + 解码）
     static func image(forKey key: String, thumbnail: Data?, full: Data?) -> NSImage? {
         if let thumbnailData = decryptedData(forKey: key + ".t", encrypted: thumbnail),

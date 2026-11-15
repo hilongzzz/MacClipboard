@@ -8,33 +8,6 @@
 import SwiftUI
 import SwiftData
 
-enum CategoryFilter: String, CaseIterable, Identifiable {
-    case all = "全部"
-    case text = "文本"
-    case image = "图片"
-    case url = "链接"
-    case color = "颜色"
-    case file = "文件"
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        NSLocalizedString(rawValue, comment: "")
-    }
-}
-
-/// 面板模式：剪贴板历史 / 片段库
-enum PanelMode: String, CaseIterable, Identifiable {
-    case history = "历史"
-    case snippets = "片段"
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        NSLocalizedString(rawValue, comment: "")
-    }
-}
-
 /// 分组管理弹窗的目的
 private enum GroupDialog: Identifiable {
     case renameGroup(String)
@@ -48,6 +21,8 @@ private enum GroupDialog: Identifiable {
     }
 }
 
+/// 面板主视图：只负责组合子视图与键盘交互；
+/// 筛选排序逻辑在 PanelFilters，分组栏/列表/卡片在 Views/ 下各自独立文件。
 struct MenuBarView: View {
     @ObservedObject var monitor: ClipboardMonitor
     @ObservedObject var settings = AppSettings.shared
@@ -73,40 +48,18 @@ struct MenuBarView: View {
     @Environment(\.modelContext) private var modelContext
 
     var onOpenSettings: () -> Void
+    var onDismiss: (() -> Void)? = nil
 
     var filteredItems: [ClipboardItem] {
-        let result = items.filter { item in
-            let matchesSearch = searchText.isEmpty
-                || PinyinIndex.matches(text: item.textContent, pinyin: item.pinyinIndex, query: searchText)
-            let matchesType: Bool
-            switch selectedCategory {
-            case .all: matchesType = true
-            case .text: matchesType = (item.type == .text || item.type == .rtf)
-            case .image: matchesType = (item.type == .image)
-            case .url: matchesType = (item.type == .url)
-            case .color: matchesType = (item.type == .color)
-            case .file: matchesType = (item.type == .file)
-            }
-            return matchesSearch && matchesType
-        }
-        return result.sorted { a, b in
-            if a.isPinned != b.isPinned { return a.isPinned }
-            return a.createdAt > b.createdAt
-        }
+        PanelFilters.history(items: items, query: searchText, category: selectedCategory)
+    }
+
+    var filteredSnippets: [Snippet] {
+        PanelFilters.snippets(snippets: snippets, selectedGroup: selectedGroup, query: searchText)
     }
 
     var groupNames: [String] {
         Array(Set(snippets.map(\.groupName))).sorted()
-    }
-
-    var filteredSnippets: [Snippet] {
-        snippets.filter { snippet in
-            let matchesGroup = selectedGroup == nil || snippet.groupName == selectedGroup
-            let matchesSearch = searchText.isEmpty
-                || PinyinIndex.matches(text: snippet.title, pinyin: snippet.pinyinIndex, query: searchText)
-                || PinyinIndex.matches(text: snippet.textContent, pinyin: nil, query: searchText)
-            return matchesGroup && matchesSearch
-        }
     }
 
     private var selectedItem: ClipboardItem? {
@@ -152,28 +105,12 @@ struct MenuBarView: View {
     private var mainColumn: some View {
         VStack(spacing: 0) {
             // 顶栏：搜索、保密模式与设置按钮
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-
-                TextField("搜索剪切板 (⌥⇧V)...", text: $searchText)
-                    .textFieldStyle(.plain)
-                    .focused($isSearchFocused)
-
-                Toggle(isOn: $monitor.isIncognito) {
-                    Image(systemName: monitor.isIncognito ? "eye.slash.fill" : "eye")
-                }
-                .toggleStyle(.button)
-                .help("无痕模式")
-
-                Button(action: onOpenSettings) {
-                    Image(systemName: "gearshape")
-                }
-                .buttonStyle(.borderless)
-                .help("偏好设置")
-            }
-            .padding(10)
-            .background(Color(NSColor.controlBackgroundColor))
+            PanelToolbar(
+                searchText: $searchText,
+                isIncognito: $monitor.isIncognito,
+                isSearchFocused: $isSearchFocused,
+                onOpenSettings: onOpenSettings
+            )
 
             // 模式切换（历史 / 片段）——独立一行，避免与分类筛选在窄面板/英文下互相挤压
             HStack {
@@ -206,7 +143,16 @@ struct MenuBarView: View {
 
             // 片段分组过滤栏（Boards）
             if mode == .snippets {
-                groupChipsBar
+                GroupChipsBar(
+                    snippets: snippets,
+                    selectedGroup: $selectedGroup,
+                    onRenameGroup: { name in
+                        groupDialogText = name
+                        groupDialog = .renameGroup(name)
+                    },
+                    onDeleteGroup: { deleteGroup($0) },
+                    onMove: { snippet, group in moveSnippet(snippet, to: group) }
+                )
             }
 
             Divider()
@@ -303,28 +249,12 @@ struct MenuBarView: View {
         .onAppear {
             isSearchFocused = true
         }
+        .onChange(of: selectedGroup) { _, _ in
+            selectedSnippetID = nil
+        }
         // 新建片段编辑器
         .sheet(isPresented: $showNewSnippetSheet) {
-            VStack(spacing: 12) {
-                Text("新建片段").font(.headline)
-                TextField("片段标题", text: $newSnippetTitle)
-                TextField("片段内容", text: $newSnippetContent, axis: .vertical)
-                    .lineLimit(3...6)
-                TextField("分组名称", text: $newSnippetGroup)
-                HStack {
-                    Spacer()
-                    Button("取消") { showNewSnippetSheet = false }
-                    Button("保存") {
-                        createSnippet(title: newSnippetTitle, content: newSnippetContent, group: newSnippetGroup)
-                        showNewSnippetSheet = false
-                    }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(newSnippetTitle.trimmingCharacters(in: .whitespaces).isEmpty
-                        || newSnippetContent.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-            }
-            .padding(16)
-            .frame(width: 320)
+            newSnippetSheet
         }
         // 重命名片段
         .alert("重命名片段", isPresented: Binding(
@@ -357,6 +287,11 @@ struct MenuBarView: View {
                 groupDialog = nil
             }
             Button("取消", role: .cancel) { groupDialog = nil }
+        }
+        .onKeyPress(.escape) {
+            // 弹窗/编辑器打开时 ESC 由其自行消费；空闲状态下 ESC 关闭面板
+            onDismiss?()
+            return .handled
         }
         .onKeyPress(.downArrow) {
             scrollDelta = +1
@@ -452,60 +387,29 @@ struct MenuBarView: View {
         }
     }
 
-    // MARK: - 分组（Boards）UI
+    // MARK: - 子视图
 
-    private var groupChipsBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                let defaultGroupName = NSLocalizedString("默认", comment: "")
-                groupChip(nil, label: NSLocalizedString("全部分组", comment: ""), count: snippets.count)
-
-                ForEach(groupNames, id: \.self) { name in
-                    let count = snippets.filter { $0.groupName == name }.count
-                    groupChip(name, label: name, count: count)
-                        .dropDestination(for: String.self) { ids, _ in
-                            guard let idString = ids.first,
-                                  let snippet = snippets.first(where: { $0.id.uuidString == idString }) else { return false }
-                            moveSnippet(snippet, to: name)
-                            return true
-                        }
-                        .contextMenu {
-                            if name != defaultGroupName {
-                                Button("重命名分组") {
-                                    groupDialogText = name
-                                    groupDialog = .renameGroup(name)
-                                }
-                                Button("删除分组") {
-                                    deleteGroup(name)
-                                }
-                            }
-                        }
+    private var newSnippetSheet: some View {
+        VStack(spacing: 12) {
+            Text("新建片段").font(.headline)
+            TextField("片段标题", text: $newSnippetTitle)
+            TextField("片段内容", text: $newSnippetContent, axis: .vertical)
+                .lineLimit(3...6)
+            TextField("分组名称", text: $newSnippetGroup)
+            HStack {
+                Spacer()
+                Button("取消") { showNewSnippetSheet = false }
+                Button("保存") {
+                    createSnippet(title: newSnippetTitle, content: newSnippetContent, group: newSnippetGroup)
+                    showNewSnippetSheet = false
                 }
+                .keyboardShortcut(.defaultAction)
+                .disabled(newSnippetTitle.trimmingCharacters(in: .whitespaces).isEmpty
+                    || newSnippetContent.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
         }
-    }
-
-    private func groupChip(_ group: String?, label: String, count: Int) -> some View {
-        Button {
-            selectedGroup = group
-            selectedSnippetID = nil
-        } label: {
-            HStack(spacing: 4) {
-                Text(label)
-                    .font(.caption)
-                Text("\(count)")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(
-                Capsule().fill(selectedGroup == group ? Color.accentColor.opacity(0.25) : Color(nsColor: .quaternaryLabelColor).opacity(0.4))
-            )
-        }
-        .buttonStyle(.plain)
+        .padding(16)
+        .frame(width: 320)
     }
 
     private var groupDialogTitle: String {
@@ -672,216 +576,6 @@ struct MenuBarView: View {
             try modelContext.save()
         } catch {
             print("SwiftData 保存失败: \(error)")
-        }
-    }
-}
-
-private func actionTitleKey(_ action: AIAssistant.Action) -> String {
-    switch action {
-    case .summarize: return "AI 摘要"
-    case .translate: return "AI 翻译"
-    case .polish: return "AI 润色"
-    }
-}
-
-/// 历史卡片的公共右键菜单（列表与卡片流共用）
-@ViewBuilder
-func clipboardItemContextMenu(
-    item: ClipboardItem,
-    onTogglePin: @escaping () -> Void,
-    onSaveAsSnippet: @escaping () -> Void,
-    onDelete: @escaping () -> Void
-) -> some View {
-    Button(item.isPinned ? "取消置顶" : "置顶", action: onTogglePin)
-
-    Button("保存为片段", action: onSaveAsSnippet)
-
-    // 按类型提供的快速操作
-    if item.type == .url, let urlString = item.urlString ?? item.textContent {
-        Button("打开链接") {
-            QuickActions.openURL(urlString)
-        }
-    }
-    if item.type == .file, let firstPath = (item.filePaths ?? []).first {
-        Button("在 Finder 中显示") {
-            QuickActions.revealInFinder(firstPath)
-        }
-    }
-    if item.type == .text, let text = item.textContent {
-        Button("用 Google 搜索") {
-            QuickActions.searchWeb(text)
-        }
-
-        // Apple Intelligence 动作（macOS 26+ 端上模型可用时）
-        if AIAssistant.isAvailable, text.count <= 2000 {
-            Menu("AI 助手") {
-                ForEach(AIAssistant.Action.allCases, id: \.self) { action in
-                    Button(actionTitleKey(action)) {
-                        AIAssistant.performAndShow(action: action, text: text)
-                    }
-                }
-            }
-        }
-
-        // 自定义 shell 命令
-        if !AppSettings.shared.customCommand.trimmingCharacters(in: .whitespaces).isEmpty {
-            Button("运行自定义命令") {
-                if let result = CustomCommand.run(command: AppSettings.shared.customCommand, on: text) {
-                    QuickActions.copyText(result)
-                } else {
-                    NSSound.beep()
-                }
-            }
-        }
-    }
-    if item.type == .color, let hex = item.colorHex {
-        if let rgb = QuickActions.rgbString(fromHex: hex) {
-            Button("复制 RGB") {
-                QuickActions.copyText(rgb)
-            }
-        }
-        if let hsl = QuickActions.hslString(fromHex: hex) {
-            Button("复制 HSL") {
-                QuickActions.copyText(hsl)
-            }
-        }
-    }
-
-    Divider()
-    Button("删除", action: onDelete)
-}
-
-struct ClipboardItemRowView: View {
-    let item: ClipboardItem
-    let isSelected: Bool
-    var shortcutIndex: Int? = nil
-
-    var body: some View {
-        HStack(spacing: 10) {
-            if let shortcutIndex {
-                Text("\(shortcutIndex)")
-                    .font(.caption2.monospaced())
-                    .foregroundColor(.secondary)
-                    .frame(width: 16, height: 16)
-                    .background(Circle().fill(Color(nsColor: .quaternaryLabelColor).opacity(0.6)))
-            }
-
-            if item.isPinned {
-                Image(systemName: "pin.fill")
-                    .font(.caption)
-                    .foregroundColor(.orange)
-            }
-
-            switch item.type {
-            case .color:
-                Circle()
-                    .fill(Color(hex: item.colorHex ?? "#000000"))
-                    .frame(width: 18, height: 18)
-                Text(item.textContent ?? "")
-                    .font(.system(.body, design: .monospaced))
-
-            case .url:
-                Image(systemName: "link.circle.fill")
-                    .foregroundColor(.blue)
-                Text(item.textContent ?? "")
-                    .lineLimit(1)
-                    .foregroundColor(.blue)
-
-            case .rtf:
-                Image(systemName: "doc.richtext.fill")
-                    .foregroundColor(.purple)
-                Text(item.textContent ?? "")
-                    .lineLimit(2)
-
-            case .image:
-                // 优先使用预生成缩略图 + 共享解码缓存，避免列表反复解码原始大图
-                if let nsImage = ClipboardImageCache.image(forHistoryItem: item) {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 50)
-                        .cornerRadius(4)
-                }
-
-            case .file:
-                Image(systemName: "folder.fill")
-                    .foregroundColor(.yellow)
-                Text(item.fileNames.joined(separator: ", "))
-                    .lineLimit(2)
-                if item.fileNames.count > 1 {
-                    Text("\(item.fileNames.count) 个文件")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-
-            case .text:
-                Image(systemName: "doc.plaintext")
-                    .foregroundColor(.secondary)
-                Text(item.textContent ?? "")
-                    .lineLimit(2)
-            }
-
-            Spacer()
-        }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 6)
-        .background(isSelected ? Color.accentColor.opacity(0.18) : Color.clear)
-        .cornerRadius(6)
-        .contentShape(Rectangle())
-    }
-}
-
-struct ClipboardListView: View {
-    let items: [ClipboardItem]
-    @Binding var selectedID: UUID?
-    var showShortcutNumbers: Bool = false
-    var scrollAnchor: UnitPoint = .center
-    let onPaste: (ClipboardItem, Bool) -> Void
-    let onDelete: (ClipboardItem) -> Void
-    let onTogglePin: (ClipboardItem) -> Void
-    let onSaveAsSnippet: (ClipboardItem) -> Void
-
-    var body: some View {
-        ScrollViewReader { proxy in
-            List {
-                if items.isEmpty {
-                    Text("暂无记录")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .listRowSeparator(.hidden)
-                }
-                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                    Button {
-                        selectedID = item.id
-                        // Shift+点击：本次强制以纯文本粘贴
-                        let forcePlainText = NSEvent.modifierFlags.contains(.shift)
-                        onPaste(item, forcePlainText)
-                    } label: {
-                        ClipboardItemRowView(
-                            item: item,
-                            isSelected: item.id == selectedID,
-                            shortcutIndex: showShortcutNumbers && index < 9 ? index + 1 : nil
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .id(item.id)
-                    .contextMenu {
-                        clipboardItemContextMenu(
-                            item: item,
-                            onTogglePin: { onTogglePin(item) },
-                            onSaveAsSnippet: { onSaveAsSnippet(item) },
-                            onDelete: { onDelete(item) }
-                        )
-                    }
-                }
-            }
-            .listStyle(.inset)
-            .onChange(of: selectedID) { _, newID in
-                if let newID {
-                    proxy.scrollTo(newID, anchor: scrollAnchor)
-                }
-            }
         }
     }
 }

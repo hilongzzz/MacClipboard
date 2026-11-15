@@ -26,3 +26,4 @@ Icon
 # Temporary files & DMGs
 *.dmg
 build/DMG_Staging/
+default.profraw

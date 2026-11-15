@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import os
 
 @main
 struct MacClipboardApp: App {
@@ -47,6 +48,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        let launchLog = Logger(subsystem: "com.yunlongzhang.MacClipboard", category: "launch")
+        launchLog.info("Launched. Preferred localizations: \(Bundle.main.preferredLocalizations, privacy: .public)")
+
         do {
             let modelContainer = try buildModelContainer()
             self.container = modelContainer
@@ -59,6 +63,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 monitor: monitorInstance,
                 onOpenSettings: { [weak self] in
                     self?.openSettingsWindow()
+                },
+                onDismiss: { [weak self] in
+                    self?.statusBarManager?.dismissPanel()
                 }
             )
 
