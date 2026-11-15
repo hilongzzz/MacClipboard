@@ -9,33 +9,57 @@ import SwiftUI
 import SwiftData
 import Combine
 
+/// 设置页分区（左侧边栏导航）
+enum SettingsSection: String, CaseIterable, Identifiable {
+    case general = "通用与粘贴"
+    case filtering = "屏蔽过滤"
+    case storage = "存储留存"
+    case about = "关于与权限"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        NSLocalizedString(rawValue, comment: "")
+    }
+
+    var systemImage: String {
+        switch self {
+        case .general: return "gearshape"
+        case .filtering: return "hand.raised"
+        case .storage: return "internaldrive"
+        case .about: return "info.circle"
+        }
+    }
+}
+
 struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
+    @State private var selection: SettingsSection = .general
 
     var body: some View {
-        TabView {
-            GeneralSettingsView(settings: settings)
-                .tabItem {
-                    Label("通用与粘贴", systemImage: "gear")
+        NavigationSplitView {
+            List(SettingsSection.allCases, selection: $selection) { section in
+                Label(section.displayName, systemImage: section.systemImage)
+                    .tag(section)
+            }
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 160, ideal: 180)
+        } detail: {
+            Group {
+                switch selection {
+                case .general:
+                    GeneralSettingsView(settings: settings)
+                case .filtering:
+                    IgnoreSettingsView(settings: settings)
+                case .storage:
+                    StorageSettingsView(settings: settings)
+                case .about:
+                    AboutSettingsView()
                 }
-
-            IgnoreSettingsView(settings: settings)
-                .tabItem {
-                    Label("屏蔽过滤", systemImage: "hand.raised")
-                }
-
-            StorageSettingsView(settings: settings)
-                .tabItem {
-                    Label("存储留存", systemImage: "internaldrive")
-                }
-
-            AboutSettingsView()
-                .tabItem {
-                    Label("关于与权限", systemImage: "info.circle")
-                }
+            }
+            .padding()
         }
-        .frame(width: 540, height: 420)
-        .padding()
+        .frame(minWidth: 640, idealWidth: 680, minHeight: 460, idealHeight: 500)
         .appAccentTint(settings.accentColorName)
     }
 }
