@@ -35,14 +35,29 @@ enum PanelMode: String, CaseIterable, Identifiable {
     }
 }
 
+/// 分组管理弹窗的目的
+private enum GroupDialog: Identifiable {
+    case renameGroup(String)
+    case newGroupFor(Snippet)
+
+    var id: String {
+        switch self {
+        case .renameGroup(let name): return "rename-\(name)"
+        case .newGroupFor(let snippet): return "new-\(snippet.id)"
+        }
+    }
+}
+
 struct MenuBarView: View {
     @ObservedObject var monitor: ClipboardMonitor
+    @ObservedObject var settings = AppSettings.shared
     @Query(sort: \ClipboardItem.createdAt, order: .reverse) private var items: [ClipboardItem]
     @Query(sort: [SortDescriptor(\Snippet.groupName), SortDescriptor(\Snippet.createdAt, order: .reverse)])
     private var snippets: [Snippet]
     @State private var mode: PanelMode = .history
     @State private var searchText: String = ""
     @State private var selectedCategory: CategoryFilter = .all
+    @State private var selectedGroup: String?
     @State private var selectedID: UUID?
     @State private var selectedSnippetID: UUID?
     @State private var renamingSnippet: Snippet?
@@ -50,6 +65,9 @@ struct MenuBarView: View {
     @State private var showNewSnippetSheet = false
     @State private var newSnippetTitle: String = ""
     @State private var newSnippetContent: String = ""
+    @State private var newSnippetGroup: String = ""
+    @State private var groupDialog: GroupDialog?
+    @State private var groupDialogText: String = ""
     @FocusState private var isSearchFocused: Bool
     @Environment(\.modelContext) private var modelContext
 
@@ -75,11 +93,17 @@ struct MenuBarView: View {
         }
     }
 
+    var groupNames: [String] {
+        Array(Set(snippets.map(\.groupName))).sorted()
+    }
+
     var filteredSnippets: [Snippet] {
-        guard !searchText.isEmpty else { return snippets }
-        return snippets.filter {
-            $0.title.localizedCaseInsensitiveContains(searchText)
-                || $0.textContent?.localizedCaseInsensitiveContains(searchText) == true
+        snippets.filter { snippet in
+            let matchesGroup = selectedGroup == nil || snippet.groupName == selectedGroup
+            let matchesSearch = searchText.isEmpty
+                || snippet.title.localizedCaseInsensitiveContains(searchText)
+                || snippet.textContent?.localizedCaseInsensitiveContains(searchText) == true
+            return matchesGroup && matchesSearch
         }
     }
 
@@ -139,25 +163,45 @@ struct MenuBarView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
 
+            // 片段分组过滤栏（Boards）
+            if mode == .snippets {
+                groupChipsBar
+            }
+
             Divider()
 
             // 列表主视图
             if mode == .history {
-                ClipboardListView(
-                    items: filteredItems,
-                    selectedID: $selectedID,
-                    onPaste: { item, forcePlain in pasteItem(item, forcePlainText: forcePlain) },
-                    onDelete: { item in deleteItem(item) },
-                    onTogglePin: { item in
-                        item.isPinned.toggle()
-                        saveContext()
-                    },
-                    onSaveAsSnippet: { item in saveAsSnippet(item) }
-                )
+                if settings.historyLayout == "strip" {
+                    ClipboardCardsView(
+                        items: filteredItems,
+                        selectedID: $selectedID,
+                        onPaste: { item, forcePlain in pasteItem(item, forcePlainText: forcePlain) },
+                        onDelete: { item in deleteItem(item) },
+                        onTogglePin: { item in
+                            item.isPinned.toggle()
+                            saveContext()
+                        },
+                        onSaveAsSnippet: { item in saveAsSnippet(item) }
+                    )
+                } else {
+                    ClipboardListView(
+                        items: filteredItems,
+                        selectedID: $selectedID,
+                        onPaste: { item, forcePlain in pasteItem(item, forcePlainText: forcePlain) },
+                        onDelete: { item in deleteItem(item) },
+                        onTogglePin: { item in
+                            item.isPinned.toggle()
+                            saveContext()
+                        },
+                        onSaveAsSnippet: { item in saveAsSnippet(item) }
+                    )
+                }
             } else {
                 SnippetListView(
                     snippets: filteredSnippets,
                     selectedID: $selectedSnippetID,
+                    groups: groupNames,
                     onPaste: { snippet, forcePlain in
                         AutoPaster.paste(snippet: snippet, forcePlainText: forcePlain)
                         SoundManager.playPasteSound()
@@ -166,6 +210,11 @@ struct MenuBarView: View {
                     onRename: { snippet in
                         renamingSnippet = snippet
                         renameText = snippet.title
+                    },
+                    onMoveToGroup: { snippet, group in moveSnippet(snippet, to: group) },
+                    onNewGroupFor: { snippet in
+                        groupDialogText = ""
+                        groupDialog = .newGroupFor(snippet)
                     }
                 )
             }
@@ -196,6 +245,7 @@ struct MenuBarView: View {
                     Button {
                         newSnippetTitle = ""
                         newSnippetContent = ""
+                        newSnippetGroup = selectedGroup ?? NSLocalizedString("默认", comment: "")
                         showNewSnippetSheet = true
                     } label: {
                         Label("新建片段", systemImage: "plus")
@@ -216,11 +266,12 @@ struct MenuBarView: View {
                 TextField("片段标题", text: $newSnippetTitle)
                 TextField("片段内容", text: $newSnippetContent, axis: .vertical)
                     .lineLimit(3...6)
+                TextField("分组名称", text: $newSnippetGroup)
                 HStack {
                     Spacer()
                     Button("取消") { showNewSnippetSheet = false }
                     Button("保存") {
-                        createSnippet(title: newSnippetTitle, content: newSnippetContent)
+                        createSnippet(title: newSnippetTitle, content: newSnippetContent, group: newSnippetGroup)
                         showNewSnippetSheet = false
                     }
                     .keyboardShortcut(.defaultAction)
@@ -231,7 +282,7 @@ struct MenuBarView: View {
             .padding(16)
             .frame(width: 320)
         }
-        // 重命名
+        // 重命名片段
         .alert("重命名片段", isPresented: Binding(
             get: { renamingSnippet != nil },
             set: { if !$0 { renamingSnippet = nil } }
@@ -243,6 +294,25 @@ struct MenuBarView: View {
                 saveContext()
             }
             Button("取消", role: .cancel) { renamingSnippet = nil }
+        }
+        // 分组重命名 / 新建分组并移入
+        .alert(groupDialogTitle, isPresented: Binding(
+            get: { groupDialog != nil },
+            set: { if !$0 { groupDialog = nil } }
+        )) {
+            TextField("分组名称", text: $groupDialogText)
+            Button("保存") {
+                switch groupDialog {
+                case .renameGroup(let oldName):
+                    renameGroup(oldName, to: groupDialogText)
+                case .newGroupFor(let snippet):
+                    moveSnippet(snippet, to: groupDialogText)
+                case nil:
+                    break
+                }
+                groupDialog = nil
+            }
+            Button("取消", role: .cancel) { groupDialog = nil }
         }
         .onKeyPress(.downArrow) {
             moveSelection(+1)
@@ -320,6 +390,70 @@ struct MenuBarView: View {
         }
     }
 
+    // MARK: - 分组（Boards）UI
+
+    private var groupChipsBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                let defaultGroupName = NSLocalizedString("默认", comment: "")
+                groupChip(nil, label: NSLocalizedString("全部分组", comment: ""), count: snippets.count)
+
+                ForEach(groupNames, id: \.self) { name in
+                    let count = snippets.filter { $0.groupName == name }.count
+                    groupChip(name, label: name, count: count)
+                        .dropDestination(for: String.self) { ids, _ in
+                            guard let idString = ids.first,
+                                  let snippet = snippets.first(where: { $0.id.uuidString == idString }) else { return false }
+                            moveSnippet(snippet, to: name)
+                            return true
+                        }
+                        .contextMenu {
+                            if name != defaultGroupName {
+                                Button("重命名分组") {
+                                    groupDialogText = name
+                                    groupDialog = .renameGroup(name)
+                                }
+                                Button("删除分组") {
+                                    deleteGroup(name)
+                                }
+                            }
+                        }
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+        }
+    }
+
+    private func groupChip(_ group: String?, label: String, count: Int) -> some View {
+        Button {
+            selectedGroup = group
+            selectedSnippetID = nil
+        } label: {
+            HStack(spacing: 4) {
+                Text(label)
+                    .font(.caption)
+                Text("\(count)")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(
+                Capsule().fill(selectedGroup == group ? Color.accentColor.opacity(0.25) : Color(nsColor: .quaternaryLabelColor).opacity(0.4))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var groupDialogTitle: String {
+        switch groupDialog {
+        case .renameGroup: return NSLocalizedString("重命名分组", comment: "")
+        case .newGroupFor: return NSLocalizedString("新建分组", comment: "")
+        case nil: return ""
+        }
+    }
+
     // MARK: - 导航
 
     private func moveSelection(_ delta: Int) -> KeyPress.Result {
@@ -380,13 +514,15 @@ struct MenuBarView: View {
 
     // MARK: - 片段操作
 
-    private func createSnippet(title: String, content: String) {
+    private func createSnippet(title: String, content: String, group: String) {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedGroup = group.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedTitle.isEmpty, !trimmedContent.isEmpty else { return }
         insertSnippet(
             type: .text,
             title: trimmedTitle,
+            groupName: trimmedGroup.isEmpty ? NSLocalizedString("默认", comment: "") : trimmedGroup,
             textContent: trimmedContent,
             imageData: nil,
             thumbnailData: nil,
@@ -397,6 +533,7 @@ struct MenuBarView: View {
     private func insertSnippet(
         type: ItemType,
         title: String,
+        groupName: String = NSLocalizedString("默认", comment: ""),
         textContent: String?,
         imageData: Data?,
         thumbnailData: Data?,
@@ -410,7 +547,7 @@ struct MenuBarView: View {
         let snippet = Snippet(
             type: type,
             title: title,
-            groupName: NSLocalizedString("默认", comment: ""),
+            groupName: groupName,
             textContent: textContent,
             imageData: imageData,
             thumbnailData: thumbnailData,
@@ -418,6 +555,36 @@ struct MenuBarView: View {
         )
         modelContext.insert(snippet)
         SoundManager.playCopySound()
+        saveContext()
+    }
+
+    private func moveSnippet(_ snippet: Snippet, to group: String) {
+        let trimmed = group.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        snippet.groupName = trimmed
+        saveContext()
+    }
+
+    private func renameGroup(_ oldName: String, to newName: String) {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != oldName else { return }
+        for snippet in snippets where snippet.groupName == oldName {
+            snippet.groupName = trimmed
+        }
+        if selectedGroup == oldName {
+            selectedGroup = trimmed
+        }
+        saveContext()
+    }
+
+    private func deleteGroup(_ name: String) {
+        let defaultGroupName = NSLocalizedString("默认", comment: "")
+        for snippet in snippets where snippet.groupName == name {
+            snippet.groupName = defaultGroupName
+        }
+        if selectedGroup == name {
+            selectedGroup = nil
+        }
         saveContext()
     }
 
@@ -436,6 +603,51 @@ struct MenuBarView: View {
             print("SwiftData 保存失败: \(error)")
         }
     }
+}
+
+/// 历史卡片的公共右键菜单（列表与卡片流共用）
+@ViewBuilder
+func clipboardItemContextMenu(
+    item: ClipboardItem,
+    onTogglePin: @escaping () -> Void,
+    onSaveAsSnippet: @escaping () -> Void,
+    onDelete: @escaping () -> Void
+) -> some View {
+    Button(item.isPinned ? "取消置顶" : "置顶", action: onTogglePin)
+
+    Button("保存为片段", action: onSaveAsSnippet)
+
+    // 按类型提供的快速操作
+    if item.type == .url, let urlString = item.urlString ?? item.textContent {
+        Button("打开链接") {
+            QuickActions.openURL(urlString)
+        }
+    }
+    if item.type == .file, let firstPath = (item.filePaths ?? []).first {
+        Button("在 Finder 中显示") {
+            QuickActions.revealInFinder(firstPath)
+        }
+    }
+    if item.type == .text, let text = item.textContent {
+        Button("用 Google 搜索") {
+            QuickActions.searchWeb(text)
+        }
+    }
+    if item.type == .color, let hex = item.colorHex {
+        if let rgb = QuickActions.rgbString(fromHex: hex) {
+            Button("复制 RGB") {
+                QuickActions.copyText(rgb)
+            }
+        }
+        if let hsl = QuickActions.hslString(fromHex: hex) {
+            Button("复制 HSL") {
+                QuickActions.copyText(hsl)
+            }
+        }
+    }
+
+    Divider()
+    Button("删除", action: onDelete)
 }
 
 struct ClipboardItemRowView: View {
@@ -539,47 +751,12 @@ struct ClipboardListView: View {
                     .buttonStyle(.plain)
                     .id(item.id)
                     .contextMenu {
-                        Button(item.isPinned ? "取消置顶" : "置顶") {
-                            onTogglePin(item)
-                        }
-
-                        Button("保存为片段") {
-                            onSaveAsSnippet(item)
-                        }
-
-                        // 按类型提供的快速操作
-                        if item.type == .url, let urlString = item.urlString ?? item.textContent {
-                            Button("打开链接") {
-                                QuickActions.openURL(urlString)
-                            }
-                        }
-                        if item.type == .file, let firstPath = (item.filePaths ?? []).first {
-                            Button("在 Finder 中显示") {
-                                QuickActions.revealInFinder(firstPath)
-                            }
-                        }
-                        if item.type == .text, let text = item.textContent {
-                            Button("用 Google 搜索") {
-                                QuickActions.searchWeb(text)
-                            }
-                        }
-                        if item.type == .color, let hex = item.colorHex {
-                            if let rgb = QuickActions.rgbString(fromHex: hex) {
-                                Button("复制 RGB") {
-                                    QuickActions.copyText(rgb)
-                                }
-                            }
-                            if let hsl = QuickActions.hslString(fromHex: hex) {
-                                Button("复制 HSL") {
-                                    QuickActions.copyText(hsl)
-                                }
-                            }
-                        }
-
-                        Divider()
-                        Button("删除") {
-                            onDelete(item)
-                        }
+                        clipboardItemContextMenu(
+                            item: item,
+                            onTogglePin: { onTogglePin(item) },
+                            onSaveAsSnippet: { onSaveAsSnippet(item) },
+                            onDelete: { onDelete(item) }
+                        )
                     }
                 }
             }

@@ -159,11 +159,10 @@ final class StatusBarManager: NSObject {
         }
     }
 
-    // MARK: - 全局热键 (⌥⇧V)
+    // MARK: - 全局热键（可在偏好设置中自定义）
 
     private func registerGlobalHotkey() {
         // 'MCLB' 签名，用于标识本应用注册的热键
-        let hotKeyID = EventHotKeyID(signature: OSType(0x4D434C42), id: 1)
         var eventType = EventTypeSpec(
             eventClass: OSType(kEventClassKeyboard),
             eventKind: UInt32(kEventHotKeyPressed)
@@ -180,9 +179,31 @@ final class StatusBarManager: NSObject {
         }
 
         InstallEventHandler(GetApplicationEventTarget(), callback, 1, &eventType, context, &hotKeyEventHandler)
+        reinstallHotkey()
+
+        // 用户在设置页录制新热键后即时重注册
+        NotificationCenter.default.addObserver(
+            forName: AppSettings.hotkeyDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                self.reinstallHotkey()
+            }
+        }
+    }
+
+    private func reinstallHotkey() {
+        if let ref = hotKeyRef {
+            UnregisterEventHotKey(ref)
+            hotKeyRef = nil
+        }
+        let settings = AppSettings.shared
+        let hotKeyID = EventHotKeyID(signature: OSType(0x4D434C42), id: 1)
         RegisterEventHotKey(
-            UInt32(kVK_ANSI_V),
-            UInt32(optionKey | shiftKey),
+            UInt32(settings.hotkeyCode),
+            UInt32(settings.hotkeyModifiers),
             hotKeyID,
             GetApplicationEventTarget(),
             0,

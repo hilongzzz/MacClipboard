@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 import Combine
 import ServiceManagement
+import Carbon.HIToolbox
 
 /// 全局设置单例。
 /// 注意：不使用 `@AppStorage`——它包在 ObservableObject 内不会触发 objectWillChange，
@@ -55,6 +56,39 @@ final class AppSettings: ObservableObject {
         didSet { Self.defaults.set(sensitiveRegexPatterns, forKey: "sensitiveRegexPatterns") }
     }
 
+    // 全局热键：Carbon 修饰键掩码 + 虚拟键码 + 展示字符（如 "V"）
+    @Published var hotkeyModifiers: Int {
+        didSet {
+            Self.defaults.set(hotkeyModifiers, forKey: "hotkeyModifiers")
+            Self.postHotkeyChanged()
+        }
+    }
+
+    @Published var hotkeyCode: Int {
+        didSet {
+            Self.defaults.set(hotkeyCode, forKey: "hotkeyCode")
+            Self.postHotkeyChanged()
+        }
+    }
+
+    @Published var hotkeyDisplay: String {
+        didSet {
+            Self.defaults.set(hotkeyDisplay, forKey: "hotkeyDisplay")
+            Self.postHotkeyChanged()
+        }
+    }
+
+    // 历史列表布局："list" 纵向列表 / "strip" 横向卡片流
+    @Published var historyLayout: String {
+        didSet { Self.defaults.set(historyLayout, forKey: "historyLayout") }
+    }
+
+    static let hotkeyDidChangeNotification = Notification.Name("AppSettings.hotkeyDidChange")
+
+    private static func postHotkeyChanged() {
+        NotificationCenter.default.post(name: hotkeyDidChangeNotification, object: nil)
+    }
+
     private init() {
         let d = Self.defaults
         launchAtLogin = d.object(forKey: "launchAtLogin") as? Bool ?? false
@@ -75,6 +109,11 @@ final class AppSettings: ObservableObject {
         } else {
             sensitiveRegexPatterns = defaultSensitiveRegex
         }
+        // 默认 ⌥⇧V（Carbon 掩码：optionKey=8, shiftKey=2；V 键码 = 9）
+        hotkeyModifiers = d.object(forKey: "hotkeyModifiers") as? Int ?? (optionKey | shiftKey)
+        hotkeyCode = d.object(forKey: "hotkeyCode") as? Int ?? 9
+        hotkeyDisplay = d.string(forKey: "hotkeyDisplay") ?? "V"
+        historyLayout = d.string(forKey: "historyLayout") ?? "list"
     }
 
     var excludedBundleIDSet: Set<String> {

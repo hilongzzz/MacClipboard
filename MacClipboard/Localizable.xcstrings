@@ -141,12 +141,42 @@
         }
       }
     },
+    "全局快捷键": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Global Hotkey"
+          }
+        }
+      }
+    },
+    "全局快捷键在上方点击录制，须包含 ⌘/⇧/⌥/⌃ 至少一个修饰键。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click above to record the global hotkey. It must include at least one modifier (⌘/⇧/⌥/⌃)."
+          }
+        }
+      }
+    },
     "全部": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "All"
+          }
+        }
+      }
+    },
+    "全部分组": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Groups"
           }
         }
       }
@@ -191,6 +221,26 @@
         }
       }
     },
+    "分组": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group"
+          }
+        }
+      }
+    },
+    "分组名称": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group name"
+          }
+        }
+      }
+    },
     "列表快捷键": {
       "localizations": {
         "en": {
@@ -207,6 +257,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete"
+          }
+        }
+      }
+    },
+    "删除分组": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Group"
           }
         }
       }
@@ -247,26 +307,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unpin"
-          }
-        }
-      }
-    },
-    "可在系统设置的键盘快捷键中重新进行全局绑定。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You can rebind the global shortcut in System Settings > Keyboard > Keyboard Shortcuts."
-          }
-        }
-      }
-    },
-    "唤出主界面": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show Panel"
           }
         }
       }
@@ -421,6 +461,16 @@
         }
       }
     },
+    "按下新快捷键…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press new shortcut…"
+          }
+        }
+      }
+    },
     "搜索剪切板 (⌥⇧V)...": {
       "localizations": {
         "en": {
@@ -447,6 +497,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Text"
+          }
+        }
+      }
+    },
+    "文本列表": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text List"
+          }
+        }
+      }
+    },
+    "新建分组": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Group"
+          }
+        }
+      }
+    },
+    "新建分组并移入…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Group…"
           }
         }
       }
@@ -497,6 +577,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mode"
+          }
+        }
+      }
+    },
+    "横向卡片流": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card Strip"
           }
         }
       }
@@ -577,6 +667,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search with Google"
+          }
+        }
+      }
+    },
+    "移动到分组": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Group"
           }
         }
       }
@@ -691,6 +791,16 @@
         }
       }
     },
+    "重命名分组": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename Group"
+          }
+        }
+      }
+    },
     "重命名片段": {
       "localizations": {
         "en": {
@@ -717,6 +827,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Accessibility Permission Required"
+          }
+        }
+      }
+    },
+    "面板布局": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panel Layout"
           }
         }
       }

@@ -46,6 +46,14 @@ struct GeneralSettingsView: View {
             Section("基础选项") {
                 Toggle("开机自动启动", isOn: $settings.launchAtLogin)
                 Toggle("复制与粘贴播放提示音", isOn: $settings.enableSoundEffects)
+                LabeledContent("全局快捷键") {
+                    HotkeyRecorderView(settings: settings)
+                        .frame(width: 160, height: 28)
+                }
+                Picker("面板布局", selection: $settings.historyLayout) {
+                    Text("文本列表").tag("list")
+                    Text("横向卡片流").tag("strip")
+                }
             }
 
             Section("粘贴行为") {
@@ -53,8 +61,7 @@ struct GeneralSettingsView: View {
                 Toggle("忽略富文本样式（统一以纯文本粘贴）", isOn: $settings.pastePlaintextOnly)
             }
 
-            Section(footer: Text("可在系统设置的键盘快捷键中重新进行全局绑定。").font(.caption).foregroundColor(.secondary)) {
-                LabeledContent("唤出主界面", value: "Option + Shift + V (⌥⇧V)")
+            Section(footer: Text("全局快捷键在上方点击录制，须包含 ⌘/⇧/⌥/⌃ 至少一个修饰键。").font(.caption).foregroundColor(.secondary)) {
                 LabeledContent("列表快捷键", value: NSLocalizedString("⌘C 复制  |  ⌘P 置顶  |  ⌘⌫ 删除  |  ⌘, 设置", comment: ""))
             }
         }

@@ -53,9 +53,12 @@ struct SnippetRowView: View {
 struct SnippetListView: View {
     let snippets: [Snippet]
     @Binding var selectedID: UUID?
+    let groups: [String]
     let onPaste: (Snippet, Bool) -> Void
     let onDelete: (Snippet) -> Void
     let onRename: (Snippet) -> Void
+    let onMoveToGroup: (Snippet, String) -> Void
+    let onNewGroupFor: (Snippet) -> Void
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -78,6 +81,8 @@ struct SnippetListView: View {
                     }
                     .buttonStyle(.plain)
                     .id(snippet.id)
+                    // 可拖入分组 chip
+                    .draggable(snippet.id.uuidString)
                     .contextMenu {
                         Button("粘贴") {
                             onPaste(snippet, false)
@@ -85,6 +90,19 @@ struct SnippetListView: View {
                         Button("重命名") {
                             onRename(snippet)
                         }
+
+                        Menu("移动到分组") {
+                            ForEach(groups.filter { $0 != snippet.groupName }, id: \.self) { group in
+                                Button(group) {
+                                    onMoveToGroup(snippet, group)
+                                }
+                            }
+                            Divider()
+                            Button("新建分组并移入…") {
+                                onNewGroupFor(snippet)
+                            }
+                        }
+
                         Divider()
                         Button("删除") {
                             onDelete(snippet)
