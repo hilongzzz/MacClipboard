@@ -26,14 +26,18 @@ struct ClipboardCardsView: View {
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    ForEach(items, id: \.id) { item in
-                        Button {
-                            selectedID = item.id
-                            let forcePlainText = NSEvent.modifierFlags.contains(.shift)
-                            onPaste(item, forcePlainText)
-                        } label: {
-                            ClipboardCardView(item: item, isSelected: item.id == selectedID)
-                        }
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                    Button {
+                        selectedID = item.id
+                        let forcePlainText = NSEvent.modifierFlags.contains(.shift)
+                        onPaste(item, forcePlainText)
+                    } label: {
+                        ClipboardCardView(
+                            item: item,
+                            isSelected: item.id == selectedID,
+                            shortcutIndex: index < 9 ? index + 1 : nil
+                        )
+                    }
                         .buttonStyle(.plain)
                         .id(item.id)
                         .contextMenu {
@@ -62,6 +66,7 @@ struct ClipboardCardsView: View {
 struct ClipboardCardView: View {
     let item: ClipboardItem
     let isSelected: Bool
+    var shortcutIndex: Int? = nil
 
     private var briefText: String {
         (item.textContent ?? "").components(separatedBy: .newlines).first ?? ""
@@ -72,7 +77,7 @@ struct ClipboardCardView: View {
             Group {
                 switch item.type {
                 case .image:
-                    if let data = item.plainThumbnailData ?? item.plainImageData, let nsImage = NSImage(data: data) {
+                    if let nsImage = ClipboardImageCache.image(forHistoryItem: item) {
                         Image(nsImage: nsImage)
                             .resizable()
                             .scaledToFill()
@@ -152,6 +157,16 @@ struct ClipboardCardView: View {
             }
         }
         .padding(8)
+        .overlay(alignment: .topLeading) {
+            if let shortcutIndex {
+                Text("\(shortcutIndex)")
+                    .font(.caption2.monospaced())
+                    .foregroundColor(.secondary)
+                    .padding(4)
+                    .background(Circle().fill(Color(nsColor: .controlBackgroundColor)))
+                    .offset(x: -4, y: -4)
+            }
+        }
         .background(
             RoundedRectangle(cornerRadius: 10)
                 .fill(isSelected ? Color.accentColor.opacity(0.15) : Color(nsColor: .controlBackgroundColor))

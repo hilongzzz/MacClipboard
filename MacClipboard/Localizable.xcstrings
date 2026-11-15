@@ -101,12 +101,12 @@
         }
       }
     },
-    "⌘C 复制  |  ⌘P 置顶  |  ⌘⌫ 删除  |  ⌘, 设置": {
+    "⌘C 复制  |  ⌘P 置顶  |  ⌘⌫ 删除  |  1-9 速贴  |  ⌘, 设置": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "⌘C Copy  |  ⌘P Pin  |  ⌘⌫ Delete  |  ⌘, Settings"
+            "value": "⌘C Copy  |  ⌘P Pin  |  ⌘⌫ Delete  |  1-9 Quick Paste  |  ⌘, Settings"
           }
         }
       }

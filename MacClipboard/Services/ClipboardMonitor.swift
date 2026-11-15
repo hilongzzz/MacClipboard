@@ -72,6 +72,14 @@ final class ClipboardMonitor: ObservableObject {
         let typeIdentifiers = pasteboard.types?.map { $0.rawValue } ?? []
         guard !SensitiveFilter.isConcealed(typeIdentifiers) else { return }
 
+        // 文件承诺（file promise）：浏览器拖拽下载、导出面板等场景，
+        // 粘贴板只有「承诺」而非真实路径，需要 NSFilePromiseReceiver 落盘后才能入库
+        if AppSettings.shared.recordFiles,
+           !Set(NSFilePromiseReceiver.readableDraggedTypes).intersection(typeIdentifiers).isEmpty {
+            receivePromisedFiles(from: pasteboard, bundleID: frontmostApp?.bundleIdentifier)
+            return
+        }
+
         let snapshot = PasteboardSnapshot(
             typeIdentifiers: typeIdentifiers,
             rtfData: pasteboard.data(forType: .rtf),
@@ -137,6 +145,46 @@ final class ClipboardMonitor: ObservableObject {
                 }
             }
         }
+    }
+
+    /// 把粘贴板中的文件承诺落盘到临时目录后入库
+    private func receivePromisedFiles(from pasteboard: NSPasteboard, bundleID: String?) {
+        let promiseTypes = Set(NSFilePromiseReceiver.readableDraggedTypes)
+            .intersection(pasteboard.types?.map { $0.rawValue } ?? [])
+        guard let rawType = promiseTypes.first else { return }
+        let receiverType = NSPasteboard.PasteboardType(rawType)
+        guard let promiseList = pasteboard.data(forType: receiverType) else { return }
+        guard let receiver = NSFilePromiseReceiver(pasteboardPropertyList: promiseList, ofType: receiverType) else { return }
+
+        guard settingsAllowsFiles else { return }
+        let destination = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MacClipboard-Promise-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+
+        let capturedBundleID = bundleID
+        let queue = OperationQueue()
+        receiver.receivePromisedFiles(
+            atDestination: destination,
+            options: [:],
+            operationQueue: queue
+        ) { [weak self] (fileURL: URL, error: Error?) in
+            guard error == nil else { return }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let names = fileURL.lastPathComponent
+                guard !SensitiveFilter.matchesSensitiveRegex(names, patternsString: AppSettings.shared.sensitiveRegexPatterns) else { return }
+                self.storeItem(
+                    type: .file,
+                    textContent: names,
+                    filePaths: [fileURL.path],
+                    bundleID: capturedBundleID
+                )
+            }
+        }
+    }
+
+    private var settingsAllowsFiles: Bool {
+        AppSettings.shared.recordFiles
     }
 
     /// 生成列表展示用的缩略图，避免列表解码原始大图

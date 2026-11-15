@@ -44,6 +44,7 @@
 | `⌘P` | 置顶 / 取消置顶当前卡片 |
 | `⌘⌫` | 删除当前选中卡片 |
 | `⌘S` | 将当前选中卡片保存为片段 |
+| `1` ~ `9` | 直接粘贴第 N 条（未在搜索框输入时生效） |
 | `⌘,` | 打开偏好设置 |
 | `Shift + 点击` | 本次强制以纯文本粘贴 |
 
@@ -51,7 +52,16 @@
 
 ## 📦 下载与安装 (Installation)
 
-### 方式 1：直接下载 DMG (推荐)
+### 方式 1：Homebrew (推荐)
+
+```bash
+brew tap hilongzzz/macclipboard https://github.com/hilongzzz/homebrew-macclipboard
+brew install --cask macclipboard
+```
+
+> 需先建 tap 仓库（见 [packaging/README.md](packaging/README.md) 的准备步骤）。
+
+### 方式 2：直接下载 DMG
 
 在 [Releases](https://github.com/hilongzzz/MacClipboard/releases) 页面下载最新的 `MacClipboard.dmg`：
 
@@ -59,7 +69,7 @@
 2. 将 **MacClipboard.app** 拖入 **Applications** 文件夹。
 3. 启动应用，并在「系统设置 -> 隐私与安全性 -> 辅助功能」中开启权限以使用自动 Cmd+V 粘贴功能。
 
-### 方式 2：从源码编译构建
+### 方式 3：从源码编译构建
 
 ```bash
 # 1. 克隆代码库
@@ -84,6 +94,19 @@ hdiutil create -volname "MacClipboard" -srcfolder build/DMG_Staging -ov -format 
 - **UI 框架**: SwiftUI + AppKit
 - **数据持久化**: SwiftData (`@Model`, `@Query`, `@Attribute(.externalStorage)`)
 - **系统集成**: `NSPasteboard`, `CGEvent`, `SMAppService` (开机自启), `ApplicationServices` (AXIsProcessTrustedWithOptions)
+
+---
+
+## 📊 性能 (Performance)
+
+空闲状态实测（Release 构建，macOS 26，无历史打开面板）：
+
+| 指标 | 数值 |
+| :--- | :--- |
+| `phys_footprint`（私有内存） | **~16 MB** |
+| RSS（含共享框架页） | ~76 MB |
+
+列表/卡片流使用共享 `NSCache` 解码缓存 + 预生成缩略图，滚动历史时不会反复解码原图。
 
 ---
 

@@ -74,7 +74,7 @@ struct GeneralSettingsView: View {
             }
 
             Section(footer: Text("全局快捷键在上方点击录制，须包含 ⌘/⇧/⌥/⌃ 至少一个修饰键。").font(.caption).foregroundColor(.secondary)) {
-                LabeledContent("列表快捷键", value: NSLocalizedString("⌘C 复制  |  ⌘P 置顶  |  ⌘⌫ 删除  |  ⌘, 设置", comment: ""))
+                LabeledContent("列表快捷键", value: NSLocalizedString("⌘C 复制  |  ⌘P 置顶  |  ⌘⌫ 删除  |  1-9 速贴  |  ⌘, 设置", comment: ""))
             }
         }
         .formStyle(.grouped)

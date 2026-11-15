@@ -188,6 +188,7 @@ struct MenuBarView: View {
                     ClipboardListView(
                         items: filteredItems,
                         selectedID: $selectedID,
+                        showShortcutNumbers: searchText.isEmpty,
                         onPaste: { item, forcePlain in pasteItem(item, forcePlainText: forcePlain) },
                         onDelete: { item in deleteItem(item) },
                         onTogglePin: { item in
@@ -328,6 +329,22 @@ struct MenuBarView: View {
             case .snippets:
                 guard let snippet = selectedSnippet else { return .ignored }
                 AutoPaster.paste(snippet: snippet)
+                SoundManager.playPasteSound()
+            }
+            return .handled
+        }
+        // 数字 1-9：速贴第 N 条（搜索输入中时输入数字）
+        .onKeyPress(keys: ["1", "2", "3", "4", "5", "6", "7", "8", "9"]) { press in
+            guard !isSearchFocused, let index = Int(String(press.key.character)) else { return .ignored }
+            switch mode {
+            case .history:
+                let list = filteredItems
+                guard index <= min(list.count, 9) else { return .ignored }
+                pasteItem(list[index - 1], forcePlainText: press.modifiers.contains(.shift))
+            case .snippets:
+                let list = filteredSnippets
+                guard index <= min(list.count, 9) else { return .ignored }
+                AutoPaster.paste(snippet: list[index - 1], forcePlainText: press.modifiers.contains(.shift))
                 SoundManager.playPasteSound()
             }
             return .handled
@@ -654,9 +671,18 @@ func clipboardItemContextMenu(
 struct ClipboardItemRowView: View {
     let item: ClipboardItem
     let isSelected: Bool
+    var shortcutIndex: Int? = nil
 
     var body: some View {
         HStack(spacing: 10) {
+            if let shortcutIndex {
+                Text("\(shortcutIndex)")
+                    .font(.caption2.monospaced())
+                    .foregroundColor(.secondary)
+                    .frame(width: 16, height: 16)
+                    .background(Circle().fill(Color(nsColor: .quaternaryLabelColor).opacity(0.6)))
+            }
+
             if item.isPinned {
                 Image(systemName: "pin.fill")
                     .font(.caption)
@@ -685,8 +711,8 @@ struct ClipboardItemRowView: View {
                     .lineLimit(2)
 
             case .image:
-                // 优先使用预生成缩略图，避免列表解码原始大图
-                if let data = item.plainThumbnailData ?? item.plainImageData, let nsImage = NSImage(data: data) {
+                // 优先使用预生成缩略图 + 共享解码缓存，避免列表反复解码原始大图
+                if let nsImage = ClipboardImageCache.image(forHistoryItem: item) {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFit()
@@ -725,6 +751,7 @@ struct ClipboardItemRowView: View {
 struct ClipboardListView: View {
     let items: [ClipboardItem]
     @Binding var selectedID: UUID?
+    var showShortcutNumbers: Bool = false
     let onPaste: (ClipboardItem, Bool) -> Void
     let onDelete: (ClipboardItem) -> Void
     let onTogglePin: (ClipboardItem) -> Void
@@ -740,14 +767,18 @@ struct ClipboardListView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .listRowSeparator(.hidden)
                 }
-                ForEach(items, id: \.id) { item in
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     Button {
                         selectedID = item.id
                         // Shift+点击：本次强制以纯文本粘贴
                         let forcePlainText = NSEvent.modifierFlags.contains(.shift)
                         onPaste(item, forcePlainText)
                     } label: {
-                        ClipboardItemRowView(item: item, isSelected: item.id == selectedID)
+                        ClipboardItemRowView(
+                            item: item,
+                            isSelected: item.id == selectedID,
+                            shortcutIndex: showShortcutNumbers && index < 9 ? index + 1 : nil
+                        )
                     }
                     .buttonStyle(.plain)
                     .id(item.id)

@@ -16,7 +16,7 @@ struct SnippetRowView: View {
         HStack(spacing: 10) {
             switch snippet.type {
             case .image:
-                if let data = snippet.plainThumbnailData ?? snippet.plainImageData, let nsImage = NSImage(data: data) {
+                if let nsImage = ClipboardImageCache.image(forSnippet: snippet) {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFit()
@@ -70,7 +70,7 @@ struct SnippetListView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .listRowSeparator(.hidden)
                 }
-                ForEach(snippets, id: \.id) { snippet in
+                ForEach(Array(snippets.enumerated()), id: \.element.id) { index, snippet in
                     Button {
                         selectedID = snippet.id
                         // Shift+点击：本次强制以纯文本粘贴

@@ -39,7 +39,7 @@ struct DetailPreviewContent: View {
         Group {
             switch item.type {
             case .image:
-                if let data = item.plainImageData, let nsImage = NSImage(data: data) {
+                if let nsImage = ClipboardImageCache.image(forKey: "preview-\(item.id)", thumbnail: nil, full: item.plainImageData) {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFit()
