@@ -20,6 +20,7 @@ final class Snippet {
     @Attribute(.externalStorage) var imageData: Data?
     @Attribute(.externalStorage) var thumbnailData: Data?
     var contentHash: String?
+    var pinyinIndex: String?
     var sortOrder: Int
     var createdAt: Date
 

@@ -122,6 +122,11 @@ final class AppSettings: ObservableObject {
         didSet { Self.defaults.set(recordFiles, forKey: "recordFiles") }
     }
 
+    // 图片 OCR 文字识别（识别结果参与搜索）
+    @Published var imageOCR: Bool {
+        didSet { Self.defaults.set(imageOCR, forKey: "imageOCR") }
+    }
+
     static let hotkeyDidChangeNotification = Notification.Name("AppSettings.hotkeyDidChange")
     static let appearanceDidChangeNotification = Notification.Name("AppSettings.appearanceDidChange")
     static let retentionDidChangeNotification = Notification.Name("AppSettings.retentionDidChange")
@@ -169,6 +174,7 @@ final class AppSettings: ObservableObject {
         recordText = d.object(forKey: "recordText") as? Bool ?? true
         recordImages = d.object(forKey: "recordImages") as? Bool ?? true
         recordFiles = d.object(forKey: "recordFiles") as? Bool ?? true
+        imageOCR = d.object(forKey: "imageOCR") as? Bool ?? true
     }
 
     var excludedBundleIDSet: Set<String> {

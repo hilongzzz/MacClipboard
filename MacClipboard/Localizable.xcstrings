@@ -451,6 +451,16 @@
         }
       }
     },
+    "图片 OCR 文字识别": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image OCR (text recognition)"
+          }
+        }
+      }
+    },
     "图片片段": {
       "localizations": {
         "en": {
@@ -1007,6 +1017,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Record text & links"
+          }
+        }
+      }
+    },
+    "识别文字": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recognized Text"
           }
         }
       }

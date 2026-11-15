@@ -114,6 +114,7 @@ struct IgnoreSettingsView: View {
                 Toggle("记录文本与链接", isOn: $settings.recordText)
                 Toggle("记录图片", isOn: $settings.recordImages)
                 Toggle("记录文件", isOn: $settings.recordFiles)
+                Toggle("图片 OCR 文字识别", isOn: $settings.imageOCR)
             }
 
             Section("应用黑名单 (Bundle ID，逗号分隔)") {

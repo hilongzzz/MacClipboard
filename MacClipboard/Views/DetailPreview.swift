@@ -39,14 +39,30 @@ struct DetailPreviewContent: View {
         Group {
             switch item.type {
             case .image:
-                if let nsImage = ClipboardImageCache.image(forKey: "preview-\(item.id)", thumbnail: nil, full: item.plainImageData) {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .scaledToFit()
-                        .padding()
-                } else {
-                    Text("暂无记录")
-                        .foregroundColor(.secondary)
+                VStack(spacing: 0) {
+                    if let nsImage = ClipboardImageCache.image(forKey: "preview-\(item.id)", thumbnail: nil, full: item.plainImageData) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .scaledToFit()
+                            .padding()
+                    } else {
+                        Text("暂无记录")
+                            .foregroundColor(.secondary)
+                            .padding()
+                    }
+
+                    // OCR 识别文字（可选中复制）
+                    if let ocrText = item.textContent, !ocrText.isEmpty {
+                        Divider()
+                        ScrollView {
+                            Text(ocrText)
+                                .font(.caption)
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                        }
+                        .frame(maxHeight: 140)
+                    }
                 }
 
             case .file:

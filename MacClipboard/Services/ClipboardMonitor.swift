@@ -135,9 +135,14 @@ final class ClipboardMonitor: ObservableObject {
                 let bitmap = NSBitmapImageRep(data: tiffData)
                 guard let pngData = bitmap?.representation(using: .png, properties: [:]) else { return }
                 let thumbnailData = Self.makeThumbnailData(fromPNG: pngData, maxPixelSize: 240)
+                // OCR 提取图片文字，写入 textContent 参与搜索
+                let ocrText = AppSettings.shared.imageOCR
+                    ? await ImageTextRecognizer.recognizeText(fromPNG: pngData)
+                    : nil
                 await MainActor.run { [weak self] in
                     self?.storeItem(
                         type: .image,
+                        textContent: ocrText,
                         plainImage: pngData,
                         plainThumbnail: thumbnailData,
                         bundleID: bundleID
@@ -235,6 +240,9 @@ final class ClipboardMonitor: ObservableObject {
         case .text, .color, .url:
             item.contentHash = textContent.map(ContentCrypto.hash(text:))
         }
+
+        // 拼音索引：含中文的文本内容（含图片 OCR 结果、文件名）生成后参与搜索
+        item.pinyinIndex = textContent.flatMap { PinyinIndex.index(for: $0) }
 
         if store.store(item, limit: AppSettings.shared.maxHistoryCount) == .inserted {
             SoundManager.playCopySound()

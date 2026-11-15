@@ -30,6 +30,7 @@ final class ClipboardItem {
     var filePaths: [String]?
     @Attribute(.externalStorage) var thumbnailData: Data?
     var contentHash: String?
+    var pinyinIndex: String?
     var sourceAppBundleID: String?
     var createdAt: Date
     var isPinned: Bool

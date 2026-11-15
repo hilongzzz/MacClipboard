@@ -75,7 +75,8 @@ struct MenuBarView: View {
 
     var filteredItems: [ClipboardItem] {
         let result = items.filter { item in
-            let matchesSearch = searchText.isEmpty || item.textContent?.localizedCaseInsensitiveContains(searchText) == true
+            let matchesSearch = searchText.isEmpty
+                || PinyinIndex.matches(text: item.textContent, pinyin: item.pinyinIndex, query: searchText)
             let matchesType: Bool
             switch selectedCategory {
             case .all: matchesType = true
@@ -101,8 +102,8 @@ struct MenuBarView: View {
         snippets.filter { snippet in
             let matchesGroup = selectedGroup == nil || snippet.groupName == selectedGroup
             let matchesSearch = searchText.isEmpty
-                || snippet.title.localizedCaseInsensitiveContains(searchText)
-                || snippet.textContent?.localizedCaseInsensitiveContains(searchText) == true
+                || PinyinIndex.matches(text: snippet.title, pinyin: snippet.pinyinIndex, query: searchText)
+                || PinyinIndex.matches(text: snippet.textContent, pinyin: nil, query: searchText)
             return matchesGroup && matchesSearch
         }
     }
@@ -515,11 +516,11 @@ struct MenuBarView: View {
             let title = String(text.prefix(20))
             insertSnippet(type: .text, title: title, textContent: text, imageData: nil, thumbnailData: nil, hash: item.contentHash)
         case .image:
-            // imageData / thumbnailData 已是密文，直接复用
+            // imageData / thumbnailData 已是密文，直接复用；携带 OCR 文本供搜索
             insertSnippet(
                 type: .image,
                 title: NSLocalizedString("图片片段", comment: ""),
-                textContent: nil,
+                textContent: item.textContent,
                 imageData: item.imageData,
                 thumbnailData: item.thumbnailData,
                 hash: item.contentHash
@@ -571,6 +572,8 @@ struct MenuBarView: View {
             thumbnailData: thumbnailData,
             contentHash: hash
         )
+        // 拼音索引：标题 + 内容（含图片 OCR 文本）
+        snippet.pinyinIndex = PinyinIndex.index(for: title + "\n" + (textContent ?? ""))
         modelContext.insert(snippet)
         SoundManager.playCopySound()
         saveContext()
