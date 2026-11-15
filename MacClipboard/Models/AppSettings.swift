@@ -131,6 +131,11 @@ final class AppSettings: ObservableObject {
         didSet { Self.defaults.set(imageOCR, forKey: "imageOCR") }
     }
 
+    // 大尺寸面板时显示预览窗格
+    @Published var previewPaneEnabled: Bool {
+        didSet { Self.defaults.set(previewPaneEnabled, forKey: "previewPaneEnabled") }
+    }
+
     // iCloud 同步（切换后需重启应用生效；失败自动回退本地）
     @Published var iCloudSync: Bool {
         didSet { Self.defaults.set(iCloudSync, forKey: "iCloudSync") }
@@ -192,6 +197,7 @@ final class AppSettings: ObservableObject {
         imageOCR = d.object(forKey: "imageOCR") as? Bool ?? true
         iCloudSync = d.object(forKey: "iCloudSync") as? Bool ?? false
         customCommand = d.string(forKey: "customCommand") ?? ""
+        previewPaneEnabled = d.object(forKey: "previewPaneEnabled") as? Bool ?? true
     }
 
     var excludedBundleIDSet: Set<String> {

@@ -54,6 +54,7 @@ struct SnippetListView: View {
     let snippets: [Snippet]
     @Binding var selectedID: UUID?
     let groups: [String]
+    var scrollAnchor: UnitPoint = .center
     let onPaste: (Snippet, Bool) -> Void
     let onDelete: (Snippet) -> Void
     let onRename: (Snippet) -> Void
@@ -110,10 +111,10 @@ struct SnippetListView: View {
                     }
                 }
             }
-            .listStyle(.sidebar)
+            .listStyle(.inset)
             .onChange(of: selectedID) { _, newID in
                 if let newID {
-                    proxy.scrollTo(newID, anchor: .center)
+                    proxy.scrollTo(newID, anchor: scrollAnchor)
                 }
             }
         }

@@ -68,6 +68,7 @@ struct MenuBarView: View {
     @State private var newSnippetGroup: String = ""
     @State private var groupDialog: GroupDialog?
     @State private var groupDialogText: String = ""
+    @State private var scrollDelta: Int = 0
     @FocusState private var isSearchFocused: Bool
     @Environment(\.modelContext) private var modelContext
 
@@ -117,6 +118,38 @@ struct MenuBarView: View {
     }
 
     var body: some View {
+        HStack(spacing: 0) {
+            mainColumn
+            // 预览窗格：大尺寸面板下实时跟随选中项
+            if showPreviewPane {
+                Divider()
+                ClipboardPreviewPane(item: previewItem)
+                    .frame(width: 210)
+            }
+        }
+        .appAccentTint(settings.accentColorName)
+    }
+
+    private var showPreviewPane: Bool {
+        settings.popoverSize == "large" && settings.previewPaneEnabled
+    }
+
+    /// 预览窗格内容：历史选中项，或片段选中项（构造临时条目复用同一渲染）
+    private var previewItem: ClipboardItem? {
+        switch mode {
+        case .history:
+            return selectedItem
+        case .snippets:
+            guard let snippet = selectedSnippet else { return nil }
+            return ClipboardItem(
+                type: snippet.type == .image ? .image : .text,
+                textContent: snippet.textContent,
+                imageData: snippet.plainImageData
+            )
+        }
+    }
+
+    private var mainColumn: some View {
         VStack(spacing: 0) {
             // 顶栏：搜索、保密模式与设置按钮
             HStack(spacing: 8) {
@@ -197,6 +230,7 @@ struct MenuBarView: View {
                         items: filteredItems,
                         selectedID: $selectedID,
                         showShortcutNumbers: searchText.isEmpty,
+                        scrollAnchor: scrollAnchor(forDelta: scrollDelta),
                         onPaste: { item, forcePlain in pasteItem(item, forcePlainText: forcePlain) },
                         onDelete: { item in deleteItem(item) },
                         onTogglePin: { item in
@@ -211,6 +245,7 @@ struct MenuBarView: View {
                     snippets: filteredSnippets,
                     selectedID: $selectedSnippetID,
                     groups: groupNames,
+                    scrollAnchor: scrollAnchor(forDelta: scrollDelta),
                     onPaste: { snippet, forcePlain in
                         AutoPaster.paste(snippet: snippet, forcePlainText: forcePlain)
                         SoundManager.playPasteSound()
@@ -324,10 +359,12 @@ struct MenuBarView: View {
             Button("取消", role: .cancel) { groupDialog = nil }
         }
         .onKeyPress(.downArrow) {
-            moveSelection(+1)
+            scrollDelta = +1
+            return moveSelection(+1)
         }
         .onKeyPress(.upArrow) {
-            moveSelection(-1)
+            scrollDelta = -1
+            return moveSelection(-1)
         }
         .onKeyPress(.return) {
             switch mode {
@@ -413,7 +450,6 @@ struct MenuBarView: View {
             }
             return .ignored
         }
-        .appAccentTint(settings.accentColorName)
     }
 
     // MARK: - 分组（Boards）UI
@@ -481,6 +517,13 @@ struct MenuBarView: View {
     }
 
     // MARK: - 导航
+
+    /// 键盘导航的滚动锚点：向下移动贴底、向上贴顶，减少大幅跳动
+    private func scrollAnchor(forDelta delta: Int) -> UnitPoint {
+        if delta > 0 { return .bottom }
+        if delta < 0 { return .top }
+        return .center
+    }
 
     private func moveSelection(_ delta: Int) -> KeyPress.Result {
         switch mode {
@@ -792,6 +835,7 @@ struct ClipboardListView: View {
     let items: [ClipboardItem]
     @Binding var selectedID: UUID?
     var showShortcutNumbers: Bool = false
+    var scrollAnchor: UnitPoint = .center
     let onPaste: (ClipboardItem, Bool) -> Void
     let onDelete: (ClipboardItem) -> Void
     let onTogglePin: (ClipboardItem) -> Void
@@ -832,10 +876,10 @@ struct ClipboardListView: View {
                     }
                 }
             }
-            .listStyle(.sidebar)
+            .listStyle(.inset)
             .onChange(of: selectedID) { _, newID in
                 if let newID {
-                    proxy.scrollTo(newID, anchor: .center)
+                    proxy.scrollTo(newID, anchor: scrollAnchor)
                 }
             }
         }

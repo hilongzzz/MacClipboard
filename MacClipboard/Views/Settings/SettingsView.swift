@@ -86,6 +86,7 @@ struct GeneralSettingsView: View {
                     Text("大").tag("large")
                 }
                 Toggle("面板出现在鼠标所在屏幕", isOn: $settings.panelFollowsMouseScreen)
+                Toggle("大尺寸面板显示预览窗格", isOn: $settings.previewPaneEnabled)
                 Picker("主题色", selection: $settings.accentColorName) {
                     ForEach(AppTheme.presets, id: \.self) { name in
                         Text(AppTheme.displayName(for: name)).tag(name)

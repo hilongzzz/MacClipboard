@@ -110,12 +110,12 @@ final class StatusBarManager: NSObject {
             return
         }
         // 顺序很关键：先激活 App，面板才能成为 key（.nonactivatingPanel 特性），
-        // 否则第一次点击时面板会被激活切换吞掉
+        // 否则第一次点击时面板会被激活切换吞掉。
+        // App 已激活后 makeKeyAndOrderFront 可带淡入动画（orderFrontRegardless 无动画）
         NSApp.activate(ignoringOtherApps: true)
         applyPanelSizeIfNeeded()
         positionPanelBelowStatusItem()
-        panel.orderFrontRegardless()
-        panel.makeKey()
+        panel.makeKeyAndOrderFront(nil)
     }
 
     private func applyPanelSizeIfNeeded() {

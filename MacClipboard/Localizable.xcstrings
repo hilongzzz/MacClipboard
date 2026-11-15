@@ -641,6 +641,16 @@
         }
       }
     },
+    "大尺寸面板显示预览窗格": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show preview pane in large panel"
+          }
+        }
+      }
+    },
     "好": {
       "localizations": {
         "en": {

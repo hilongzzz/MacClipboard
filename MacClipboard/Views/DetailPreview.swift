@@ -41,7 +41,7 @@ struct DetailPreviewContent: View {
             switch item.type {
             case .image:
                 VStack(spacing: 0) {
-                    if let nsImage = ClipboardImageCache.image(forKey: "preview-\(item.id)", thumbnail: nil, full: item.plainImageData) {
+                    if let nsImage = ClipboardImageCache.fullImage(forHistoryItem: item) {
                         Image(nsImage: nsImage)
                             .resizable()
                             .scaledToFit()
