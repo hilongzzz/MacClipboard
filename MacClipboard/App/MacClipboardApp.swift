@@ -49,7 +49,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let launchLog = Logger(subsystem: "com.yunlongzhang.MacClipboard", category: "launch")
-        launchLog.info("Launched. Preferred localizations: \(Bundle.main.preferredLocalizations, privacy: .public)")
+        let preferredLocales = Bundle.main.preferredLocalizations
+        print("Preferred localizations: \(preferredLocales)")
+        launchLog.info("Launched. Preferred localizations: \(preferredLocales, privacy: .public)")
 
         do {
             let modelContainer = try buildModelContainer()
@@ -78,13 +80,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// 退出时按设置清空未置顶历史（clear-on-quit）
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if AppSettings.shared.clearOnQuit, let container = container {
-            let context = container.mainContext
-            try? context.delete(model: ClipboardItem.self, where: #Predicate<ClipboardItem> { !$0.isPinned })
-            do {
-                try context.save()
-            } catch {
-                print("退出清空历史失败: \(error)")
-            }
+            HistoryStore(modelContext: container.mainContext).clearUnpinned()
         }
         return .terminateNow
     }
@@ -131,7 +127,54 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             monitor?.isIncognito.toggle()
         case .paste(let index):
             pasteNthHistoryItem(index)
+        case .stats:
+            logDebugStats()
+        case .dump:
+            dumpRecentHistory()
         }
+    }
+
+    /// 调试观测：历史/片段统计 + 最近条目摘要（stdout 与统一日志双通道）
+    private let debugLog = Logger(subsystem: "com.yunlongzhang.MacClipboard", category: "debug")
+
+    private func logDebugStats() {
+        guard let container, let context = try? ModelContext(container) else {
+            print("STATS container unavailable")
+            return
+        }
+        let historyCount = (try? context.fetchCount(FetchDescriptor<ClipboardItem>())) ?? -1
+        let snippetCount = (try? context.fetchCount(FetchDescriptor<Snippet>())) ?? -1
+        var descriptor = FetchDescriptor<ClipboardItem>(
+            sortBy: [SortDescriptor(\ClipboardItem.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        let last = (try? context.fetch(descriptor))?.first
+        let lastSummary = last.map {
+            "\($0.typeRaw)|\(($0.textContent ?? "-").prefix(40))|pinned=\($0.isPinned)"
+        } ?? "empty"
+        let line = "STATS history=\(historyCount) snippets=\(snippetCount) incognito=\(monitor?.isIncognito ?? false) last=[\(lastSummary)]"
+        print(line)
+        debugLog.info("\(line)")
+    }
+
+    private func dumpRecentHistory() {
+        guard let container, let context = try? ModelContext(container) else { return }
+        var descriptor = FetchDescriptor<ClipboardItem>(
+            sortBy: [SortDescriptor(\ClipboardItem.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 5
+        let items = (try? context.fetch(descriptor)) ?? []
+        print("DUMP begin")
+        debugLog.info("DUMP begin")
+        for (i, item) in items.enumerated() {
+            let summary = String((item.textContent ?? "-").prefix(60))
+            let hash = String((item.contentHash ?? "-").prefix(8))
+            let dumpLine = "DUMP[\(i)] \(item.typeRaw) | \(summary) | pinned=\(item.isPinned) | hash=\(hash)"
+            print(dumpLine)
+            debugLog.info("\(dumpLine)")
+        }
+        print("DUMP end")
+        debugLog.info("DUMP end")
     }
 
     private func pasteNthHistoryItem(_ index: Int) {

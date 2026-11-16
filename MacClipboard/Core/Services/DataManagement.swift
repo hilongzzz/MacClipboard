@@ -12,11 +12,35 @@ import UniformTypeIdentifiers
 /// 数据管理：存储占用统计与片段导出（导出内容为解密后的明文 JSON）。
 enum DataManagement {
 
-    /// SwiftData 存储目录体积（含外部存储的图片附件）
+    /// SwiftData 存储体积。注意：非沙盒应用的 SwiftData 默认库位于
+    /// ~/Library/Application Support/default.store（不在 bundle-id 子目录），
+    /// 同时兼容显式指定过目录的情况。
     static func storeSizeBytes() -> Int64 {
-        let storeDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "MacClipboard")
-        return directorySize(at: storeDir)
+        let fm = FileManager.default
+        let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        var total: Int64 = 0
+
+        // SwiftData 默认库（default.store 及其 WAL/外部存储）
+        for suffix in ["", "-wal", "-shm", "/_EXTERNAL_DATA"] {
+            let url = appSupport.appendingPathComponent("default.store\(suffix)")
+            total += size(of: url)
+        }
+
+        // 显式 bundle-id 目录（历史配置兼容）
+        let legacyDir = appSupport.appendingPathComponent(Bundle.main.bundleIdentifier ?? "MacClipboard")
+        total += size(of: legacyDir)
+        return total
+    }
+
+    private static func size(of url: URL) -> Int64 {
+        let fm = FileManager.default
+        var isDir: ObjCBool = false
+        guard fm.fileExists(atPath: url.path, isDirectory: &isDir) else { return 0 }
+        if !isDir.boolValue {
+            let values = try? url.resourceValues(forKeys: [.fileSizeKey])
+            return Int64(values?.fileSize ?? 0)
+        }
+        return directorySize(at: url)
     }
 
     static func formattedStoreSize() -> String {

@@ -79,6 +79,18 @@ final class HistoryStore {
         save()
     }
 
+    /// 清空未置顶历史（clear-on-quit 使用；片段与置顶卡片保留）
+    func clearUnpinned() {
+        let descriptor = FetchDescriptor<ClipboardItem>(
+            predicate: #Predicate<ClipboardItem> { !$0.isPinned }
+        )
+        guard let unpinned = try? modelContext.fetch(descriptor), !unpinned.isEmpty else { return }
+        for item in unpinned {
+            modelContext.delete(item)
+        }
+        save()
+    }
+
     func save() {
         do {
             try modelContext.save()

@@ -11,10 +11,14 @@ import Foundation
 /// - macclipboard://show            打开面板
 /// - macclipboard://toggle-incognito 切换无痕
 /// - macclipboard://paste?n=3       粘贴第 3 条历史
+/// - macclipboard://stats           输出历史/片段统计（调试）
+/// - macclipboard://dump            输出最近 5 条历史明细（调试）
 enum URLCommand: Equatable {
     case show
     case toggleIncognito
     case paste(index: Int)
+    case stats
+    case dump
 
     static func parse(_ url: URL) -> URLCommand? {
         guard url.scheme?.lowercased() == "macclipboard" else { return nil }
@@ -28,6 +32,10 @@ enum URLCommand: Equatable {
             let n = components?.queryItems?.first { $0.name == "n" }
                 .flatMap { Int($0.value ?? "") } ?? 1
             return .paste(index: max(1, n))
+        case "stats":
+            return .stats
+        case "dump":
+            return .dump
         default:
             return nil
         }

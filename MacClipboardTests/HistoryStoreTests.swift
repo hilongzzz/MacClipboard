@@ -126,6 +126,20 @@ final class HistoryStoreTests: XCTestCase {
         XCTAssertTrue(items.contains { $0.textContent == "OLD_PINNED" })
     }
 
+    func testClearUnpinnedKeepsPinned() throws {
+        let pinned = makeTextItem("PINNED", createdBefore: 50)
+        pinned.isPinned = true
+        store.store(pinned, limit: 100)
+        store.store(makeTextItem("A", createdBefore: 20), limit: 100)
+        store.store(makeTextItem("B", createdBefore: 10), limit: 100)
+
+        store.clearUnpinned()
+
+        let items = try allItems()
+        XCTAssertEqual(items.count, 1)
+        XCTAssertEqual(items.first?.textContent, "PINNED")
+    }
+
     func testPurgeDisabledWhenDaysZero() throws {
         store.store(makeTextItem("A", createdBefore: 100 * 86400), limit: 100)
         store.purgeExpired(olderThanDays: 0)
