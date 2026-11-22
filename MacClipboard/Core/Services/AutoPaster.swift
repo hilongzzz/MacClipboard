@@ -30,7 +30,7 @@ struct AutoPaster {
         writeSnippetToPasteboard(snippet)
 
         if AppSettings.shared.autoPasteAfterCopy {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
                 simulateCmdV()
             }
         }
@@ -57,7 +57,7 @@ struct AutoPaster {
         writeToPasteboard(item, forcePlainText: forcePlainText)
 
         if AppSettings.shared.autoPasteAfterCopy {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
                 simulateCmdV()
             }
         }
@@ -99,16 +99,19 @@ struct AutoPaster {
             return
         }
 
-        let source = CGEventSource(stateID: .combinedSessionState)
+        // 使用 hidSystemState 避免继承合并当前已按下的用户层硬件复合修饰键
+        guard let source = CGEventSource(stateID: .hidSystemState) else { return }
         let vKeyCode: CGKeyCode = 0x09
 
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: true)
-        keyDown?.flags = .maskCommand
-        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: false)
-        keyUp?.flags = .maskCommand
+        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: false) else { return }
 
-        keyDown?.post(tap: .cghidEventTap)
-        keyUp?.post(tap: .cghidEventTap)
+        // 严格锁定 flags 仅包含 Command，阻止物理 Shift / Option 串入造成误触
+        keyDown.flags = .maskCommand
+        keyUp.flags = .maskCommand
+
+        keyDown.post(tap: .cghidEventTap)
+        keyUp.post(tap: .cghidEventTap)
     }
 
     private static func promptForAccessibilityPermission() {

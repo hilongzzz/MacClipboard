@@ -31,6 +31,7 @@ struct MenuBarView: View {
     private var snippets: [Snippet]
     @State private var mode: PanelMode = .history
     @State private var searchText: String = ""
+    @State private var debouncedSearchText: String = ""
     @State private var selectedCategory: CategoryFilter = .all
     @State private var selectedGroup: String?
     @State private var selectedID: UUID?
@@ -51,11 +52,11 @@ struct MenuBarView: View {
     var onDismiss: (() -> Void)? = nil
 
     var filteredItems: [ClipboardItem] {
-        PanelFilters.history(items: items, query: searchText, category: selectedCategory)
+        PanelFilters.history(items: items, query: debouncedSearchText, category: selectedCategory)
     }
 
     var filteredSnippets: [Snippet] {
-        PanelFilters.snippets(snippets: snippets, selectedGroup: selectedGroup, query: searchText)
+        PanelFilters.snippets(snippets: snippets, selectedGroup: selectedGroup, query: debouncedSearchText)
     }
 
     var groupNames: [String] {
@@ -81,6 +82,17 @@ struct MenuBarView: View {
             }
         }
         .appAccentTint(settings.accentColorName)
+        .task(id: searchText) {
+            if searchText.isEmpty {
+                debouncedSearchText = ""
+            } else {
+                // 120ms 防抖，大幅降低频繁键入时的全量拼音检索主线程压力
+                try? await Task.sleep(nanoseconds: 120_000_000)
+                if !Task.isCancelled {
+                    debouncedSearchText = searchText
+                }
+            }
+        }
     }
 
     private var showPreviewPane: Bool {
@@ -193,8 +205,7 @@ struct MenuBarView: View {
                     groups: groupNames,
                     scrollAnchor: scrollAnchor(forDelta: scrollDelta),
                     onPaste: { snippet, forcePlain in
-                        AutoPaster.paste(snippet: snippet, forcePlainText: forcePlain)
-                        SoundManager.playPasteSound()
+                        pasteSnippet(snippet, forcePlainText: forcePlain)
                     },
                     onDelete: { snippet in deleteSnippet(snippet) },
                     onRename: { snippet in
@@ -308,8 +319,7 @@ struct MenuBarView: View {
                 pasteItem(item)
             case .snippets:
                 guard let snippet = selectedSnippet else { return .ignored }
-                AutoPaster.paste(snippet: snippet)
-                SoundManager.playPasteSound()
+                pasteSnippet(snippet)
             }
             return .handled
         }
@@ -324,8 +334,7 @@ struct MenuBarView: View {
             case .snippets:
                 let list = filteredSnippets
                 guard index <= min(list.count, 9) else { return .ignored }
-                AutoPaster.paste(snippet: list[index - 1], forcePlainText: press.modifiers.contains(.shift))
-                SoundManager.playPasteSound()
+                pasteSnippet(list[index - 1], forcePlainText: press.modifiers.contains(.shift))
             }
             return .handled
         }
@@ -450,7 +459,14 @@ struct MenuBarView: View {
     // MARK: - 历史操作
 
     private func pasteItem(_ item: ClipboardItem, forcePlainText: Bool = false) {
+        onDismiss?()
         AutoPaster.paste(item: item, forcePlainText: forcePlainText)
+        SoundManager.playPasteSound()
+    }
+
+    private func pasteSnippet(_ snippet: Snippet, forcePlainText: Bool = false) {
+        onDismiss?()
+        AutoPaster.paste(snippet: snippet, forcePlainText: forcePlainText)
         SoundManager.playPasteSound()
     }
 
@@ -458,6 +474,7 @@ struct MenuBarView: View {
         if selectedID == item.id {
             selectedID = nil
         }
+        DataManagement.cleanupPromiseFiles(for: item)
         modelContext.delete(item)
         saveContext()
     }

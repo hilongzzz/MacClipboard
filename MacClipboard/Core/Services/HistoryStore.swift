@@ -60,6 +60,7 @@ final class HistoryStore {
         descriptor.fetchLimit = count - limit
         if let oldest = try? modelContext.fetch(descriptor) {
             for old in oldest {
+                DataManagement.cleanupPromiseFiles(for: old)
                 modelContext.delete(old)
             }
         }
@@ -74,6 +75,7 @@ final class HistoryStore {
         )
         guard let expired = try? modelContext.fetch(descriptor), !expired.isEmpty else { return }
         for item in expired {
+            DataManagement.cleanupPromiseFiles(for: item)
             modelContext.delete(item)
         }
         save()
@@ -86,6 +88,7 @@ final class HistoryStore {
         )
         guard let unpinned = try? modelContext.fetch(descriptor), !unpinned.isEmpty else { return }
         for item in unpinned {
+            DataManagement.cleanupPromiseFiles(for: item)
             modelContext.delete(item)
         }
         save()

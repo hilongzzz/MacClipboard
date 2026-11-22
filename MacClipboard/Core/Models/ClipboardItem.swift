@@ -20,7 +20,7 @@ enum ItemType: String, Codable {
 
 @Model
 final class ClipboardItem {
-    @Attribute(.unique) var id: UUID
+    var id: UUID
     var typeRaw: String
     var textContent: String?
     @Attribute(.externalStorage) var imageData: Data?

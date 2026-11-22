@@ -198,4 +198,39 @@ enum DataManagement {
             return nil
         }
     }
+
+    // MARK: - Promise 临时文件清理
+
+    /// 清理特定条目关联的 Promise 临时目录
+    static func cleanupPromiseFiles(for item: ClipboardItem) {
+        guard let paths = item.filePaths else { return }
+        cleanupPromiseFiles(in: paths)
+    }
+
+    /// 清理路径列表中的 Promise 临时目录
+    static func cleanupPromiseFiles(in paths: [String]) {
+        let tempPrefix = FileManager.default.temporaryDirectory.path + "/MacClipboard-Promise-"
+        let fm = FileManager.default
+        for path in paths {
+            if path.hasPrefix(tempPrefix) {
+                let url = URL(fileURLWithPath: path)
+                let parentDir = url.deletingLastPathComponent()
+                if parentDir.path.hasPrefix(tempPrefix) {
+                    try? fm.removeItem(at: parentDir)
+                } else if url.path.hasPrefix(tempPrefix) {
+                    try? fm.removeItem(at: url)
+                }
+            }
+        }
+    }
+
+    /// 清理系统临时目录下所有遗留的 MacClipboard-Promise-* 文件夹
+    static func cleanupAllPromiseTemporaryDirectories() {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory
+        guard let entries = try? fm.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: nil) else { return }
+        for entry in entries where entry.lastPathComponent.hasPrefix("MacClipboard-Promise-") {
+            try? fm.removeItem(at: entry)
+        }
+    }
 }

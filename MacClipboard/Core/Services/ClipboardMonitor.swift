@@ -54,11 +54,13 @@ final class ClipboardMonitor: ObservableObject {
     /// 启动时清理一次 + 每小时巡检；设置页调整保留天数后立即清理
     private func startPurgeScheduler() {
         purgeExpiredHistory()
-        purgeTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+        let t = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.purgeExpiredHistory()
             }
         }
+        t.tolerance = 60.0
+        purgeTimer = t
         NotificationCenter.default.addObserver(
             forName: AppSettings.retentionDidChangeNotification,
             object: nil,
@@ -76,11 +78,14 @@ final class ClipboardMonitor: ObservableObject {
     }
 
     func startMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        let t = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.checkPasteboard()
             }
         }
+        // 允许 100ms 容差以支持系统定时器合并 (Timer Coalescing)，降低唤醒能耗并利好 App Nap
+        t.tolerance = 0.1
+        self.timer = t
     }
 
     private func checkPasteboard() {
@@ -118,6 +123,10 @@ final class ClipboardMonitor: ObservableObject {
                 || typeIdentifiers.contains(NSPasteboard.PasteboardType.png.rawValue)
         )
 
+        // 超大 Payload 容量熔断保护：文本 > 2,000,000 字符或 RTF > 10MB 时跳过，防止内存撑爆和主线程卡顿
+        if let str = snapshot.string, str.count > 2_000_000 { return }
+        if let rtf = snapshot.rtfData, rtf.count > 10 * 1024 * 1024 { return }
+
         guard let classification = ClipboardClassifier.classify(snapshot) else { return }
 
         // 录制类型开关
@@ -154,22 +163,36 @@ final class ClipboardMonitor: ObservableObject {
             storeItem(type: .text, textContent: text, bundleID: bundleID)
 
         case .image:
-            // TIFF 捕获必须在剪贴板被覆盖前完成（主线程），
-            // 昂贵的 PNG 编码/缩略图/哈希全部移入后台队列
-            guard let image = NSImage(pasteboard: pasteboard), let tiffData = image.tiffRepresentation else { return }
+            // 直接读取剪贴板的原始图片二进制数据，避免在主线程构建重量级的 NSImage 和 tiffRepresentation
+            let rawImageData: Data? = pasteboard.data(forType: .png)
+                ?? pasteboard.data(forType: .tiff)
+                ?? (NSImage(pasteboard: pasteboard)?.tiffRepresentation)
+
+            guard let rawData = rawImageData else { return }
+            // 容量熔断保护（50MB），防止极端/超大图像导致主线程或内存溢出
+            guard rawData.count <= 50 * 1024 * 1024 else { return }
+
             Task.detached(priority: .userInitiated) { [weak self] in
-                let bitmap = NSBitmapImageRep(data: tiffData)
-                guard let pngData = bitmap?.representation(using: .png, properties: [:]) else { return }
-                let thumbnailData = Self.makeThumbnailData(fromPNG: pngData, maxPixelSize: 240)
+                let pngData: Data?
+                // 如果原始数据已是标准 PNG，直接复用；否则在后台使用 NSBitmapImageRep 编码为 PNG
+                if rawData.starts(with: [0x89, 0x50, 0x4E, 0x47]) {
+                    pngData = rawData
+                } else if let bitmap = NSBitmapImageRep(data: rawData) {
+                    pngData = bitmap.representation(using: .png, properties: [:])
+                } else {
+                    pngData = nil
+                }
+                guard let finalPngData = pngData else { return }
+                let thumbnailData = Self.makeThumbnailData(fromPNG: finalPngData, maxPixelSize: 240)
                 // OCR 提取图片文字，写入 textContent 参与搜索
                 let ocrText = AppSettings.shared.imageOCR
-                    ? await ImageTextRecognizer.recognizeText(fromPNG: pngData)
+                    ? await ImageTextRecognizer.recognizeText(fromPNG: finalPngData)
                     : nil
                 let newID = await MainActor.run { [weak self] in
                     self?.storeItem(
                         type: .image,
                         textContent: ocrText,
-                        plainImage: pngData,
+                        plainImage: finalPngData,
                         plainThumbnail: thumbnailData,
                         bundleID: bundleID
                     )
@@ -179,7 +202,7 @@ final class ClipboardMonitor: ObservableObject {
                     ClipboardImageCache.seedDecrypted(
                         forKey: "history-\(id)",
                         thumbnailPlain: thumbnailData,
-                        fullPlain: pngData
+                        fullPlain: finalPngData
                     )
                 }
             }

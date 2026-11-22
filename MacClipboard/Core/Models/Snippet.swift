@@ -12,7 +12,7 @@ import SwiftData
 /// 第一期支持文本与图片两种类型（复用 ItemType 的 .text / .image）。
 @Model
 final class Snippet {
-    @Attribute(.unique) var id: UUID
+    var id: UUID
     var title: String
     var groupName: String
     var typeRaw: String

@@ -72,6 +72,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             )
 
             registerURLSchemeHandler()
+
+            Task.detached(priority: .background) {
+                DataManagement.cleanupAllPromiseTemporaryDirectories()
+            }
         } catch {
             fatalError("Failed to initialize SwiftData container: \(error)")
         }
